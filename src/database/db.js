@@ -79,3 +79,20 @@ export const getCategories = async () => {
     return [];
   }
 };
+
+// ✅ Delete Book by ID
+export const deleteBook = async (bookId, refreshBooks) => {
+  const db = await getDbConnection();
+  if (!db) return;
+
+  try {
+    await db.runAsync('DELETE FROM books WHERE id = ?;', [bookId]);
+    console.log(`✅ Book with ID ${bookId} deleted!`);
+
+    if (refreshBooks) {
+      await refreshBooks(); // ✅ Refresh the books list after deleting
+    }
+  } catch (error) {
+    console.error('❌ Error deleting book:', error);
+  }
+};
