@@ -18,8 +18,8 @@ export const setupDatabase = async () => {
   if (!db) return;
 
   try {
-    // ❌ Drop old table if exists (fixes column mismatch issues)
-    await db.execAsync(`DROP TABLE IF EXISTS books;`);
+    // ❌ Don't drop the books table (data would be lost every time)
+    // await db.execAsync(`DROP TABLE IF EXISTS books;`);
     
     // ✅ Create the books table with correct schema
     await db.execAsync(`
@@ -35,7 +35,7 @@ export const setupDatabase = async () => {
       );
     `);
 
-    // ✅ Create the categories table
+    // ✅ Create the categories table if it doesn't exist
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS categories (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
