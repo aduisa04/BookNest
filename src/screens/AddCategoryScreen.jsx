@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, Button, Alert, FlatList, Text } from 'react-native';
+import { View, TextInput, Button, Alert, FlatList, Text, StyleSheet } from 'react-native';
 import { addCategory, getCategories } from '../database/db';
 
-const AddCategoryScreen = () => {
+const CategoriesScreen = () => {
   const [categoryName, setCategoryName] = useState('');
   const [categories, setCategories] = useState([]);
 
-  // ✅ Fetch Categories on Screen Load
   useEffect(() => {
     fetchCategories();
   }, []);
 
   const fetchCategories = async () => {
-    await getCategories(setCategories);
+    const data = await getCategories();
+    setCategories(data);
   };
 
   const handleAddCategory = async () => {
@@ -20,33 +20,37 @@ const AddCategoryScreen = () => {
       Alert.alert('Error', 'Category name cannot be empty');
       return;
     }
-    await addCategory(categoryName, fetchCategories); // ✅ Refresh categories after adding
+    await addCategory(categoryName, fetchCategories);
     Alert.alert('Success', 'Category added successfully!');
-    setCategoryName(''); // Clear input field
+    setCategoryName('');
   };
 
   return (
-    <View style={{ padding: 20 }}>
+    <View style={styles.container}>
+      <Text style={styles.header}>Categories</Text>
       <TextInput
         placeholder="Enter Category Name"
         value={categoryName}
         onChangeText={setCategoryName}
-        style={{
-          borderWidth: 1, borderColor: '#ccc', padding: 10, marginBottom: 10, borderRadius: 5
-        }}
+        style={styles.input}
       />
-      <Button title="➕ Add Category" onPress={handleAddCategory} />
-
-      {/* ✅ Show updated category list in real-time */}
+      <Button title="➕ Add Category" onPress={handleAddCategory} color="#A67C52" />
       <FlatList
         data={categories}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
-          <Text style={{ padding: 10, fontSize: 16 }}>{item.name}</Text>
+          <Text style={styles.categoryItem}>{item.name}</Text>
         )}
       />
     </View>
   );
 };
 
-export default AddCategoryScreen;
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F5E6D2', padding: 20 },
+  header: { fontSize: 24, fontWeight: 'bold', color: '#4B3E3E', marginBottom: 15 },
+  input: { borderWidth: 1, borderColor: '#ccc', padding: 10, marginBottom: 10, borderRadius: 5, backgroundColor: '#FFF' },
+  categoryItem: { padding: 10, fontSize: 18, backgroundColor: '#FFF', marginBottom: 5, borderRadius: 5, color: '#4B3E3E' },
+});
+
+export default CategoriesScreen;

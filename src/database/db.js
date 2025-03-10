@@ -18,10 +18,7 @@ export const setupDatabase = async () => {
   if (!db) return;
 
   try {
-    // ❌ Don't drop the books table (data would be lost every time)
-    // await db.execAsync(`DROP TABLE IF EXISTS books;`);
-    
-    // ✅ Create the books table with correct schema
+    // Create the books table with correct schema
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS books (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,7 +32,7 @@ export const setupDatabase = async () => {
       );
     `);
 
-    // ✅ Create the categories table if it doesn't exist
+    // Create the categories table if it doesn't exist
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS categories (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -59,7 +56,7 @@ export const addCategory = async (categoryName, refreshCategories) => {
     console.log(`✅ Category '${categoryName}' added!`);
 
     if (refreshCategories) {
-      await refreshCategories(); // ✅ Refresh the categories list after adding
+      await refreshCategories(); // Refresh the categories list after adding
     }
   } catch (error) {
     console.error('❌ Error adding category:', error);
@@ -73,7 +70,7 @@ export const getCategories = async () => {
 
   try {
     const results = await db.getAllAsync('SELECT * FROM categories');
-    return results || []; // ✅ Ensure it returns an empty array if results are undefined
+    return results || [];
   } catch (error) {
     console.error('❌ Error fetching categories:', error);
     return [];
@@ -90,9 +87,25 @@ export const deleteBook = async (bookId, refreshBooks) => {
     console.log(`✅ Book with ID ${bookId} deleted!`);
 
     if (refreshBooks) {
-      await refreshBooks(); // ✅ Refresh the books list after deleting
+      await refreshBooks(); // Refresh the books list after deleting
     }
   } catch (error) {
     console.error('❌ Error deleting book:', error);
+  }
+};
+
+// ✅ Toggle Favorite Status for a Book
+export const toggleFavorite = async (bookId, currentFavorite, refreshBooks) => {
+  const db = await getDbConnection();
+  if (!db) return;
+  try {
+    const newFavorite = currentFavorite ? 0 : 1;
+    await db.runAsync('UPDATE books SET favorite = ? WHERE id = ?;', [newFavorite, bookId]);
+    console.log(`✅ Toggled favorite for book ${bookId} to ${newFavorite}`);
+    if (refreshBooks) {
+      await refreshBooks();
+    }
+  } catch (error) {
+    console.error('❌ Error toggling favorite:', error);
   }
 };

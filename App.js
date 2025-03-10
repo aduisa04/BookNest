@@ -1,7 +1,9 @@
+// App.js
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native'; // Import NavigationContainer
 import { setupDatabase } from './src/database/db';
-import AppNavigator from './src/navigation/AppNavigator';
+import RootNavigator from './src/navigation/RootNavigator'; // Use RootNavigator as entry point
 
 export default function App() {
   const [loading, setLoading] = useState(true);
@@ -13,21 +15,19 @@ export default function App() {
         const timeout = setTimeout(() => {
           console.error('Database initialization timed out');
           setLoading(false);
-        }, 10000); // Timeout after 10 seconds
-  
+        }, 10000);
+
         await setupDatabase();
-        clearTimeout(timeout); // Clear the timeout if successful
+        clearTimeout(timeout);
       } catch (error) {
         console.error('Error during database initialization:', error);
       } finally {
         setLoading(false);
       }
     };
-  
+
     initializeDB();
   }, []);
-  
-  
 
   if (loading) {
     return (
@@ -38,5 +38,9 @@ export default function App() {
     );
   }
 
-  return <AppNavigator />;
+  return (
+    <NavigationContainer>
+      <RootNavigator />
+    </NavigationContainer>
+  );
 }

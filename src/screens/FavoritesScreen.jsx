@@ -1,26 +1,25 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, TextInput } from 'react-native';
+// FavoritesScreen.jsx
+import React, { useState, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { getDbConnection, deleteBook, toggleFavorite } from '../database/db';
 
-const HomeScreen = () => {
+const FavoritesScreen = () => {
   const navigation = useNavigation();
-  const [books, setBooks] = useState([]);
+  const [favoriteBooks, setFavoriteBooks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
 
-  // Refresh books list
-  const refreshBooks = async () => {
+  const refreshFavorites = async () => {
     const db = await getDbConnection();
-    const result = await db.getAllAsync('SELECT * FROM books');
-    setBooks(result);
+    const result = await db.getAllAsync('SELECT * FROM books WHERE favorite = 1');
+    setFavoriteBooks(result);
     setLoading(false);
   };
 
-  // Use focus effect to refresh data whenever this screen is focused
+  // Refresh favorites every time the screen comes into focus.
   useFocusEffect(
     useCallback(() => {
-      refreshBooks();
+      refreshFavorites();
     }, [])
   );
 
@@ -33,7 +32,7 @@ const HomeScreen = () => {
         {
           text: 'Delete',
           onPress: async () => {
-            await deleteBook(bookId, refreshBooks);
+            await deleteBook(bookId, refreshFavorites);
           },
         },
       ],
@@ -42,14 +41,8 @@ const HomeScreen = () => {
   };
 
   const handleToggleFavorite = async (book) => {
-    await toggleFavorite(book.id, book.favorite, refreshBooks);
+    await toggleFavorite(book.id, book.favorite, refreshFavorites);
   };
-
-  // Filter books by title or author
-  const filteredBooks = books.filter(book =>
-    book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    book.author.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   if (loading) {
     return <ActivityIndicator size="large" color="#6B7280" style={styles.loader} />;
@@ -57,14 +50,8 @@ const HomeScreen = () => {
 
   return (
     <View style={styles.container}>
-      <TextInput
-        placeholder="Search books..."
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        style={styles.searchBar}
-      />
       <FlatList
-        data={filteredBooks}
+        data={favoriteBooks}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <View style={styles.bookCard}>
@@ -107,16 +94,6 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5E6D2', padding: 20 },
   loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  searchBar: {
-    backgroundColor: '#FFF',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    marginBottom: 15,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#ccc'
-  },
   bookCard: {
     backgroundColor: '#FFF',
     padding: 15,
@@ -142,4 +119,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HomeScreen;
+export default FavoritesScreen;
