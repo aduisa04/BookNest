@@ -1,15 +1,27 @@
+// BookNest/src/screens/HomeScreen.jsx
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, TextInput } from 'react-native';
+import { 
+  View, 
+  Text, 
+  FlatList, 
+  TouchableOpacity, 
+  StyleSheet, 
+  ActivityIndicator, 
+  Alert, 
+  TextInput 
+} from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { getDbConnection, deleteBook, toggleFavorite } from '../database/db';
+import { useTheme } from '../context/ThemeContext';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const { theme } = useTheme();
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Refresh books list
   const refreshBooks = async () => {
     const db = await getDbConnection();
     const result = await db.getAllAsync('SELECT * FROM books');
@@ -17,7 +29,6 @@ const HomeScreen = () => {
     setLoading(false);
   };
 
-  // Use focus effect to refresh data whenever this screen is focused
   useFocusEffect(
     useCallback(() => {
       refreshBooks();
@@ -32,9 +43,7 @@ const HomeScreen = () => {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
-          onPress: async () => {
-            await deleteBook(bookId, refreshBooks);
-          },
+          onPress: async () => await deleteBook(bookId, refreshBooks),
         },
       ],
       { cancelable: true }
@@ -45,56 +54,80 @@ const HomeScreen = () => {
     await toggleFavorite(book.id, book.favorite, refreshBooks);
   };
 
-  // Filter books by title or author
   const filteredBooks = books.filter(book =>
     book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     book.author.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (loading) {
-    return <ActivityIndicator size="large" color="#6B7280" style={styles.loader} />;
+    return (
+      <View style={[styles.loaderContainer, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.buttonBackground} />
+      </View>
+    );
   }
 
   return (
-    <View style={styles.container}>
-      <TextInput
-        placeholder="Search books..."
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        style={styles.searchBar}
-      />
+    <View style={[styles.outerContainer, { backgroundColor: theme.background }]}>
+      {/* Header with Settings button */}
+      <View style={[styles.header, { backgroundColor: theme.buttonBackground }]}>
+        <Text style={[styles.headerText, { color: theme.buttonText }]}>BookNest</Text>
+        <TouchableOpacity 
+          style={styles.settingsButton}
+          onPress={() => navigation.navigate('Settings')}
+        >
+          <Ionicons name="settings-outline" size={24} color={theme.buttonText} />
+        </TouchableOpacity>
+      </View>
+      
+      {/* Search Bar */}
+      <View style={[styles.searchContainer, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+        <Ionicons name="search" size={20} color={theme.text} style={{ marginHorizontal: 8 }} />
+        <TextInput
+          placeholder="Search books..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          style={[styles.searchInput, { color: theme.text }]}
+          placeholderTextColor={theme.text}
+        />
+      </View>
+      
+      {/* Book List */}
       <FlatList
         data={filteredBooks}
         keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.listContainer}
         renderItem={({ item }) => (
-          <View style={styles.bookCard}>
+          <View style={[styles.bookCard, { backgroundColor: theme.cardBackground }]}>
             <TouchableOpacity
               style={styles.bookDetails}
               onPress={() => navigation.navigate('BookDetails', { bookId: item.id })}
             >
-              <Text style={styles.bookTitle}>{item.title}</Text>
-              <Text style={styles.bookAuthor}>by {item.author}</Text>
+              <Text style={[styles.bookTitle, { color: theme.text }]}>{item.title}</Text>
+              <Text style={[styles.bookAuthor, { color: theme.text }]}>by {item.author}</Text>
             </TouchableOpacity>
             <View style={styles.actions}>
               <TouchableOpacity
+                style={styles.actionButton}
                 onPress={() => navigation.navigate('EditBook', { bookId: item.id })}
-                style={styles.actionButton}
               >
-                <Text style={styles.actionText}>✏️</Text>
+                <Ionicons name="create-outline" size={24} color={theme.buttonText} />
               </TouchableOpacity>
               <TouchableOpacity
+                style={styles.actionButton}
                 onPress={() => handleDeleteBook(item.id)}
-                style={styles.actionButton}
               >
-                <Text style={styles.actionText}>❌</Text>
+                <Ionicons name="trash-outline" size={24} color={theme.buttonText} />
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => handleToggleFavorite(item)}
                 style={styles.actionButton}
+                onPress={() => handleToggleFavorite(item)}
               >
-                <Text style={[styles.actionText, { color: item.favorite ? '#FFD700' : '#888' }]}>
-                  ★
-                </Text>
+                {item.favorite ? (
+                  <Ionicons name="star" size={24} color="#FFD700" />
+                ) : (
+                  <Ionicons name="star-outline" size={24} color={theme.buttonText} />
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -105,40 +138,74 @@ const HomeScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5E6D2', padding: 20 },
-  loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  searchBar: {
-    backgroundColor: '#FFF',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    paddingVertical: 8,
+  outerContainer: {
+    flex: 1,
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: {
+    paddingVertical: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 10,
+  },
+  headerText: {
+    fontSize: 28,
+    fontWeight: 'bold',
+  },
+  settingsButton: {
+    padding: 8,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 20,
     marginBottom: 15,
-    fontSize: 16,
+    paddingHorizontal: 10,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#ccc'
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    fontSize: 16,
+  },
+  listContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   bookCard: {
-    backgroundColor: '#FFF',
     padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
+    borderRadius: 12,
+    marginBottom: 15,
     shadowColor: '#000',
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
-  bookDetails: { marginBottom: 10 },
-  bookTitle: { fontSize: 18, fontWeight: 'bold', color: '#4B3E3E' },
-  bookAuthor: { fontSize: 14, color: '#6B7280' },
+  bookDetails: {
+    marginBottom: 10,
+  },
+  bookTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  bookAuthor: {
+    fontSize: 16,
+  },
   actions: {
     flexDirection: 'row',
     justifyContent: 'space-around',
   },
   actionButton: {
-    padding: 8,
-  },
-  actionText: {
-    fontSize: 18,
+    backgroundColor: '#A67C52',
+    padding: 10,
+    borderRadius: 10,
   },
 });
 

@@ -1,9 +1,10 @@
-// App.js
+// BookNest/App.js
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native'; // Import NavigationContainer
+import { NavigationContainer } from '@react-navigation/native';
 import { setupDatabase } from './src/database/db';
-import RootNavigator from './src/navigation/RootNavigator'; // Use RootNavigator as entry point
+import RootNavigator from './src/navigation/RootNavigator';
+import { ThemeProvider } from './src/context/ThemeContext';
 
 export default function App() {
   const [loading, setLoading] = useState(true);
@@ -16,7 +17,6 @@ export default function App() {
           console.error('Database initialization timed out');
           setLoading(false);
         }, 10000);
-
         await setupDatabase();
         clearTimeout(timeout);
       } catch (error) {
@@ -25,7 +25,6 @@ export default function App() {
         setLoading(false);
       }
     };
-
     initializeDB();
   }, []);
 
@@ -39,8 +38,10 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      <RootNavigator />
-    </NavigationContainer>
+    <ThemeProvider>
+      <NavigationContainer>
+        <RootNavigator />
+      </NavigationContainer>
+    </ThemeProvider>
   );
 }

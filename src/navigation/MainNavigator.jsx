@@ -5,6 +5,7 @@ import AddBookScreen from '../screens/AddBookScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
 import CategoriesScreen from '../screens/AddCategoryScreen';
 import EditBookScreen from '../screens/EditBookScreen';
+import SettingsScreen from '../screens/SettingsScreen'; // Import SettingsScreen
 import { Ionicons } from '@expo/vector-icons';
 
 const Tab = createBottomTabNavigator();

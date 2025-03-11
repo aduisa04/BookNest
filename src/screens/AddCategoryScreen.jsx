@@ -1,8 +1,11 @@
+// BookNest/src/screens/AddCategoryScreen.jsx
 import React, { useState, useEffect } from 'react';
 import { View, TextInput, Button, Alert, FlatList, Text, StyleSheet } from 'react-native';
 import { addCategory, getCategories } from '../database/db';
+import { useTheme } from '../context/ThemeContext';
 
-const CategoriesScreen = () => {
+const AddCategoryScreen = () => {
+  const { theme } = useTheme();
   const [categoryName, setCategoryName] = useState('');
   const [categories, setCategories] = useState([]);
 
@@ -26,20 +29,26 @@ const CategoriesScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Categories</Text>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <Text style={[styles.header, { color: theme.text }]}>Add Category</Text>
       <TextInput
         placeholder="Enter Category Name"
         value={categoryName}
         onChangeText={setCategoryName}
-        style={styles.input}
+        style={[
+          styles.input,
+          { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }
+        ]}
+        placeholderTextColor={theme.text}
       />
-      <Button title="➕ Add Category" onPress={handleAddCategory} color="#A67C52" />
+      <Button title="Add Category" onPress={handleAddCategory} color={theme.buttonBackground} />
       <FlatList
         data={categories}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
-          <Text style={styles.categoryItem}>{item.name}</Text>
+          <Text style={[styles.categoryItem, { backgroundColor: theme.cardBackground, color: theme.text }]}>
+            {item.name}
+          </Text>
         )}
       />
     </View>
@@ -47,10 +56,28 @@ const CategoriesScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5E6D2', padding: 20 },
-  header: { fontSize: 24, fontWeight: 'bold', color: '#4B3E3E', marginBottom: 15 },
-  input: { borderWidth: 1, borderColor: '#ccc', padding: 10, marginBottom: 10, borderRadius: 5, backgroundColor: '#FFF' },
-  categoryItem: { padding: 10, fontSize: 18, backgroundColor: '#FFF', marginBottom: 5, borderRadius: 5, color: '#4B3E3E' },
+  container: { 
+    flex: 1, 
+    padding: 20 
+  },
+  header: { 
+    fontSize: 24, 
+    fontWeight: 'bold', 
+    marginBottom: 15 
+  },
+  input: { 
+    borderWidth: 1, 
+    padding: 10, 
+    marginBottom: 10, 
+    borderRadius: 5, 
+    fontSize: 16 
+  },
+  categoryItem: { 
+    padding: 10, 
+    fontSize: 18, 
+    marginBottom: 5, 
+    borderRadius: 5 
+  },
 });
 
-export default CategoriesScreen;
+export default AddCategoryScreen;

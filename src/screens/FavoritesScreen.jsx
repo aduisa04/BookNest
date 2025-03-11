@@ -1,22 +1,38 @@
-// FavoritesScreen.jsx
+// BookNest/src/screens/FavoritesScreen.jsx
 import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { 
+  View, 
+  FlatList, 
+  TouchableOpacity, 
+  StyleSheet, 
+  ActivityIndicator, 
+  Alert, 
+  Text 
+} from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { getDbConnection, deleteBook, toggleFavorite } from '../database/db';
+import { useTheme } from '../context/ThemeContext';
 
 const FavoritesScreen = () => {
   const navigation = useNavigation();
+  const { theme } = useTheme();
   const [favoriteBooks, setFavoriteBooks] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const refreshFavorites = async () => {
-    const db = await getDbConnection();
-    const result = await db.getAllAsync('SELECT * FROM books WHERE favorite = 1');
-    setFavoriteBooks(result);
-    setLoading(false);
+    try {
+      const db = await getDbConnection();
+      const result = await db.getAllAsync('SELECT * FROM books WHERE favorite = 1');
+      console.log("Favorites query result:", result);
+      setFavoriteBooks(result || []);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error refreshing favorites:", error);
+      setLoading(false);
+    }
   };
 
-  // Refresh favorites every time the screen comes into focus.
   useFocusEffect(
     useCallback(() => {
       refreshFavorites();
@@ -31,9 +47,7 @@ const FavoritesScreen = () => {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
-          onPress: async () => {
-            await deleteBook(bookId, refreshFavorites);
-          },
+          onPress: async () => await deleteBook(bookId, refreshFavorites),
         },
       ],
       { cancelable: true }
@@ -45,43 +59,58 @@ const FavoritesScreen = () => {
   };
 
   if (loading) {
-    return <ActivityIndicator size="large" color="#6B7280" style={styles.loader} />;
+    return (
+      <View style={[styles.loaderContainer, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.buttonBackground} />
+      </View>
+    );
+  }
+
+  if (favoriteBooks.length === 0) {
+    return (
+      <View style={[styles.emptyContainer, { backgroundColor: theme.background }]}>
+        <Text style={[styles.emptyText, { color: theme.text }]}>No favorite books found.</Text>
+      </View>
+    );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <FlatList
         data={favoriteBooks}
         keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.listContainer}
         renderItem={({ item }) => (
-          <View style={styles.bookCard}>
+          <View style={[styles.bookCard, { backgroundColor: theme.cardBackground }]}>
             <TouchableOpacity
               style={styles.bookDetails}
               onPress={() => navigation.navigate('BookDetails', { bookId: item.id })}
             >
-              <Text style={styles.bookTitle}>{item.title}</Text>
-              <Text style={styles.bookAuthor}>by {item.author}</Text>
+              <Text style={[styles.bookTitle, { color: theme.text }]}>{item.title}</Text>
+              <Text style={[styles.bookAuthor, { color: theme.text }]}>by {item.author}</Text>
             </TouchableOpacity>
             <View style={styles.actions}>
               <TouchableOpacity
+                style={[styles.actionButton, { backgroundColor: theme.buttonBackground }]}
                 onPress={() => navigation.navigate('EditBook', { bookId: item.id })}
-                style={styles.actionButton}
               >
-                <Text style={styles.actionText}>✏️</Text>
+                <Ionicons name="create-outline" size={24} color={theme.buttonText} />
               </TouchableOpacity>
               <TouchableOpacity
+                style={[styles.actionButton, { backgroundColor: theme.buttonBackground }]}
                 onPress={() => handleDeleteBook(item.id)}
-                style={styles.actionButton}
               >
-                <Text style={styles.actionText}>❌</Text>
+                <Ionicons name="trash-outline" size={24} color={theme.buttonText} />
               </TouchableOpacity>
               <TouchableOpacity
+                style={[styles.actionButton, { backgroundColor: theme.buttonBackground }]}
                 onPress={() => handleToggleFavorite(item)}
-                style={styles.actionButton}
               >
-                <Text style={[styles.actionText, { color: item.favorite ? '#FFD700' : '#888' }]}>
-                  ★
-                </Text>
+                {item.favorite ? (
+                  <Ionicons name="star" size={24} color="#FFD700" />
+                ) : (
+                  <Ionicons name="star-outline" size={24} color={theme.buttonText} />
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -92,30 +121,53 @@ const FavoritesScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5E6D2', padding: 20 },
-  loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  container: { 
+    flex: 1, 
+    padding: 20,
+  },
+  loaderContainer: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  listContainer: {
+    paddingBottom: 20,
+  },
   bookCard: {
-    backgroundColor: '#FFF',
     padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
+    borderRadius: 12,
+    marginBottom: 15,
     shadowColor: '#000',
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
-  bookDetails: { marginBottom: 10 },
-  bookTitle: { fontSize: 18, fontWeight: 'bold', color: '#4B3E3E' },
-  bookAuthor: { fontSize: 14, color: '#6B7280' },
+  bookDetails: { 
+    marginBottom: 10,
+  },
+  bookTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  bookAuthor: {
+    fontSize: 16,
+  },
   actions: {
     flexDirection: 'row',
     justifyContent: 'space-around',
   },
   actionButton: {
-    padding: 8,
-  },
-  actionText: {
-    fontSize: 18,
+    padding: 10,
+    borderRadius: 10,
   },
 });
 
