@@ -7,9 +7,11 @@ import {
   Text, 
   TouchableOpacity, 
   StyleSheet, 
-  View 
+  View, 
+  Image 
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
 import { getDbConnection, getCategories } from '../database/db';
 import { Picker } from '@react-native-picker/picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,6 +29,7 @@ const EditBookScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [status, setStatus] = useState('Pending');
   const [notes, setNotes] = useState('');
+  const [coverImage, setCoverImage] = useState(null);
 
   useEffect(() => {
     fetchCategories();
@@ -52,9 +55,27 @@ const EditBookScreen = () => {
         setStatus(result.status);
         setNotes(result.notes);
         setSelectedCategory(result.category);
+        setCoverImage(result.coverImage); // Set existing cover image, if available
       }
     } catch (error) {
       console.error('❌ Error fetching book details:', error);
+    }
+  };
+
+  // Function to pick an image from the gallery
+  const pickImage = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert("Permission required", "Permission to access gallery is required!");
+      return;
+    }
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.7,
+    });
+    if (!result.cancelled) {
+      setCoverImage(result.uri);
     }
   };
 
@@ -66,8 +87,8 @@ const EditBookScreen = () => {
     try {
       const db = await getDbConnection();
       await db.runAsync(
-        'UPDATE books SET title = ?, author = ?, category = ?, status = ?, notes = ? WHERE id = ?',
-        [title, author, selectedCategory, status, notes, bookId]
+        'UPDATE books SET title = ?, author = ?, category = ?, status = ?, notes = ?, coverImage = ? WHERE id = ?',
+        [title, author, selectedCategory, status, notes, coverImage, bookId]
       );
       Alert.alert('Success', 'Book updated successfully!');
       navigation.goBack();
@@ -88,16 +109,15 @@ const EditBookScreen = () => {
         value={title} 
         onChangeText={setTitle} 
         style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text }]} 
-        placeholderTextColor="#999"
+        placeholderTextColor={theme.text}
       />
       <TextInput 
         placeholder="Author" 
         value={author} 
         onChangeText={setAuthor} 
         style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text }]} 
-        placeholderTextColor="#999"
+        placeholderTextColor={theme.text}
       />
-
       <Text style={[styles.label, { color: theme.text }]}>Select Status</Text>
       <View style={[styles.pickerContainer, { backgroundColor: theme.inputBackground, borderColor: theme.border }]}>
         <Picker 
@@ -110,7 +130,6 @@ const EditBookScreen = () => {
           <Picker.Item label="Finished" value="Finished" />
         </Picker>
       </View>
-
       <Text style={[styles.label, { color: theme.text }]}>Select Category</Text>
       <View style={[styles.pickerContainer, { backgroundColor: theme.inputBackground, borderColor: theme.border }]}>
         <Picker 
@@ -124,7 +143,6 @@ const EditBookScreen = () => {
           ))}
         </Picker>
       </View>
-
       <Text style={[styles.label, { color: theme.text }]}>Notes</Text>
       <TextInput
         placeholder="Enter book notes..."
@@ -132,8 +150,19 @@ const EditBookScreen = () => {
         onChangeText={setNotes}
         style={[styles.input, styles.notesInput, { backgroundColor: theme.inputBackground, color: theme.text }]}
         multiline
-        placeholderTextColor="#999"
+        placeholderTextColor={theme.text}
       />
+
+      {/* Cover Image Section */}
+      <TouchableOpacity style={[styles.imageButton, { backgroundColor: theme.buttonBackground }]} onPress={pickImage}>
+        <Text style={[styles.imageButtonText, { color: theme.buttonText }]}>
+          {coverImage ? 'Change Cover Image' : 'Select Cover Image'}
+        </Text>
+      </TouchableOpacity>
+      {coverImage && (
+        <Image source={{ uri: coverImage }} style={styles.coverPreview} resizeMode="cover" />
+      )}
+
       <TouchableOpacity style={[styles.button, { backgroundColor: theme.buttonBackground }]} onPress={handleUpdateBook}>
         <Ionicons name="save-outline" size={24} color={theme.buttonText} />
         <Text style={[styles.buttonText, { color: theme.buttonText }]}> Save Changes</Text>
@@ -165,6 +194,10 @@ const styles = StyleSheet.create({
     borderRadius: 8, 
     fontSize: 16,
   },
+  notesInput: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
   label: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -180,14 +213,12 @@ const styles = StyleSheet.create({
   picker: {
     height: 50,
   },
-  notesInput: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
   button: {
     flexDirection: 'row',
-    padding: 12,
-    borderRadius: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    marginBottom: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -195,6 +226,23 @@ const styles = StyleSheet.create({
     fontSize: 16, 
     fontWeight: 'bold',
     marginLeft: 8,
+  },
+  imageButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  imageButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  coverPreview: {
+    width: '100%',
+    height: 200,
+    borderRadius: 10,
+    marginBottom: 15,
   },
 });
 

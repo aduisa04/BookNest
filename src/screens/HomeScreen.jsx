@@ -1,139 +1,151 @@
 // BookNest/src/screens/HomeScreen.jsx
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   View, 
   Text, 
+  ScrollView, 
   FlatList, 
-  TouchableOpacity, 
+  Image, 
   StyleSheet, 
-  ActivityIndicator, 
-  Alert, 
-  TextInput 
+  ActivityIndicator 
 } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { getDbConnection, deleteBook, toggleFavorite } from '../database/db';
 import { useTheme } from '../context/ThemeContext';
+import { useFocusEffect } from '@react-navigation/native';
+import { getDbConnection } from '../database/db';
+
+// Import images – adjust paths as needed
+import logo from '../../assets/booknest.png';
+import banner1 from '../../assets/banner1.png';
+import banner2 from '../../assets/banner2.png';
+import banner3 from '../../assets/banner3.png';
 
 const HomeScreen = () => {
-  const navigation = useNavigation();
   const { theme } = useTheme();
-  const [books, setBooks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
 
-  const refreshBooks = async () => {
-    const db = await getDbConnection();
-    const result = await db.getAllAsync('SELECT * FROM books');
-    setBooks(result);
-    setLoading(false);
+  // Banner images array (static/dummy; can be dynamic later)
+  const banners = [banner1, banner2, banner3];
+
+  // State for Recently Read (most recent added) books, limited to 3
+  const [recentBooks, setRecentBooks] = useState([]);
+  const [loadingRecent, setLoadingRecent] = useState(true);
+
+  // State for Favorite books, limited to 3
+  const [favoriteBooks, setFavoriteBooks] = useState([]);
+  const [loadingFavorites, setLoadingFavorites] = useState(true);
+
+  // Fetch the 3 most recent books (assuming higher id means more recent)
+  const fetchRecentBooks = async () => {
+    try {
+      const db = await getDbConnection();
+      // Order by id descending and limit to 3
+      const results = await db.getAllAsync('SELECT * FROM books ORDER BY id DESC LIMIT 3');
+      setRecentBooks(results || []);
+      setLoadingRecent(false);
+    } catch (error) {
+      console.error("Error fetching recent books:", error);
+      setLoadingRecent(false);
+    }
+  };
+
+  // Fetch the 3 most recent favorite books
+  const fetchFavoriteBooks = async () => {
+    try {
+      const db = await getDbConnection();
+      // Fetch favorite books ordered by id descending, limit to 3
+      const results = await db.getAllAsync('SELECT * FROM books WHERE favorite = 1 ORDER BY id DESC LIMIT 3');
+      setFavoriteBooks(results || []);
+      setLoadingFavorites(false);
+    } catch (error) {
+      console.error("Error fetching favorite books:", error);
+      setLoadingFavorites(false);
+    }
   };
 
   useFocusEffect(
     useCallback(() => {
-      refreshBooks();
+      fetchRecentBooks();
+      fetchFavoriteBooks();
     }, [])
   );
 
-  const handleDeleteBook = (bookId) => {
-    Alert.alert(
-      'Delete Book',
-      'Are you sure you want to delete this book?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          onPress: async () => await deleteBook(bookId, refreshBooks),
-        },
-      ],
-      { cancelable: true }
-    );
-  };
-
-  const handleToggleFavorite = async (book) => {
-    await toggleFavorite(book.id, book.favorite, refreshBooks);
-  };
-
-  const filteredBooks = books.filter(book =>
-    book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    book.author.toLowerCase().includes(searchQuery.toLowerCase())
+  // Render a card for a single book item (used in both sections)
+  const renderBookCard = ({ item }) => (
+    <View style={[styles.bookCard, { backgroundColor: theme.cardBackground }]}>
+      {item.coverImage ? (
+        <Image source={{ uri: item.coverImage }} style={styles.bookCover} resizeMode="cover" />
+      ) : (
+        <View style={[styles.coverPlaceholder, { backgroundColor: theme.inputBackground }]}>
+          <Text style={{ color: theme.border }}>No Image</Text>
+        </View>
+      )}
+      <Text style={[styles.bookTitle, { color: theme.text }]} numberOfLines={1}>
+        {item.title}
+      </Text>
+      <Text style={[styles.bookAuthor, { color: theme.text }]} numberOfLines={1}>
+        by {item.author}
+      </Text>
+    </View>
   );
 
-  if (loading) {
-    return (
-      <View style={[styles.loaderContainer, { backgroundColor: theme.background }]}>
-        <ActivityIndicator size="large" color={theme.buttonBackground} />
-      </View>
-    );
-  }
-
   return (
-    <View style={[styles.outerContainer, { backgroundColor: theme.background }]}>
-      {/* Header with Settings button */}
+    <ScrollView style={[styles.outerContainer, { backgroundColor: theme.background }]} contentContainerStyle={styles.contentContainer}>
+      {/* Header Section */}
       <View style={[styles.header, { backgroundColor: theme.buttonBackground }]}>
-        <Text style={[styles.headerText, { color: theme.buttonText }]}>BookNest</Text>
-        <TouchableOpacity 
-          style={styles.settingsButton}
-          onPress={() => navigation.navigate('Settings')}
-        >
-          <Ionicons name="settings-outline" size={24} color={theme.buttonText} />
-        </TouchableOpacity>
+        <View style={styles.brandContainer}>
+          <Image source={logo} style={styles.logo} resizeMode="contain" />
+          <Text style={[styles.brandText, { color: theme.buttonText }]}>BookNest</Text>
+        </View>
       </View>
-      
-      {/* Search Bar */}
-      <View style={[styles.searchContainer, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
-        <Ionicons name="search" size={20} color={theme.text} style={{ marginHorizontal: 8 }} />
-        <TextInput
-          placeholder="Search books..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          style={[styles.searchInput, { color: theme.text }]}
-          placeholderTextColor={theme.text}
-        />
-      </View>
-      
-      {/* Book List */}
-      <FlatList
-        data={filteredBooks}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.listContainer}
-        renderItem={({ item }) => (
-          <View style={[styles.bookCard, { backgroundColor: theme.cardBackground }]}>
-            <TouchableOpacity
-              style={styles.bookDetails}
-              onPress={() => navigation.navigate('BookDetails', { bookId: item.id })}
-            >
-              <Text style={[styles.bookTitle, { color: theme.text }]}>{item.title}</Text>
-              <Text style={[styles.bookAuthor, { color: theme.text }]}>by {item.author}</Text>
-            </TouchableOpacity>
-            <View style={styles.actions}>
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={() => navigation.navigate('EditBook', { bookId: item.id })}
-              >
-                <Ionicons name="create-outline" size={24} color={theme.buttonText} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={() => handleDeleteBook(item.id)}
-              >
-                <Ionicons name="trash-outline" size={24} color={theme.buttonText} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={() => handleToggleFavorite(item)}
-              >
-                {item.favorite ? (
-                  <Ionicons name="star" size={24} color="#FFD700" />
-                ) : (
-                  <Ionicons name="star-outline" size={24} color={theme.buttonText} />
-                )}
-              </TouchableOpacity>
+
+      {/* Banner Scroller */}
+      <View style={styles.bannerContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.bannerScroll}>
+          {banners.map((banner, index) => (
+            <View key={index} style={styles.bannerWrapper}>
+              <Image source={banner} style={styles.bannerImage} resizeMode="cover" />
             </View>
-          </View>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Recently Read Section */}
+      <View style={styles.sectionContainer}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Recently Read</Text>
+        {loadingRecent ? (
+          <ActivityIndicator size="small" color={theme.buttonBackground} />
+        ) : recentBooks.length > 0 ? (
+          <FlatList
+            data={recentBooks}
+            horizontal
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderBookCard}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.horizontalList}
+          />
+        ) : (
+          <Text style={[styles.emptyText, { color: theme.text }]}>No recent books found.</Text>
         )}
-      />
-    </View>
+      </View>
+
+      {/* Your Favorites Section */}
+      <View style={styles.sectionContainer}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Your Favorites</Text>
+        {loadingFavorites ? (
+          <ActivityIndicator size="small" color={theme.buttonBackground} />
+        ) : favoriteBooks.length > 0 ? (
+          <FlatList
+            data={favoriteBooks}
+            horizontal
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderBookCard}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.horizontalList}
+          />
+        ) : (
+          <Text style={[styles.emptyText, { color: theme.text }]}>No favorite books found.</Text>
+        )}
+      </View>
+    </ScrollView>
   );
 };
 
@@ -141,71 +153,101 @@ const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
   },
-  loaderContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  contentContainer: {
+    paddingVertical: 20,
   },
   header: {
-    paddingVertical: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    height: 80,
     paddingHorizontal: 20,
-    marginBottom: 10,
+    justifyContent: 'center',
+    marginBottom: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
   },
-  headerText: {
-    fontSize: 28,
+  brandContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logo: {
+    width: 80,
+    height: 80,
+    marginRight: 10,
+  },
+  brandText: {
+    fontSize: 32,
     fontWeight: 'bold',
   },
-  settingsButton: {
-    padding: 8,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  bannerContainer: {
     marginHorizontal: 20,
-    marginBottom: 15,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-    borderWidth: 1,
+    marginBottom: 20,
   },
-  searchInput: {
-    flex: 1,
-    height: 40,
-    fontSize: 16,
+  bannerScroll: {
+    paddingVertical: 10,
   },
-  listContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+  bannerWrapper: {
+    marginRight: 15,
+    borderRadius: 15,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+  },
+  bannerImage: {
+    width: 320,
+    height: 200,
+  },
+  sectionContainer: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  horizontalList: {
+    paddingVertical: 10,
   },
   bookCard: {
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 15,
+    width: 140,
+    marginRight: 15,
+    borderRadius: 10,
+    overflow: 'hidden',
+    paddingBottom: 8,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+    elevation: 2,
   },
-  bookDetails: {
-    marginBottom: 10,
+  bookCover: {
+    width: '100%',
+    height: 180,
+  },
+  coverPlaceholder: {
+    width: '100%',
+    height: 180,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   bookTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: 'bold',
+    marginTop: 5,
+    textAlign: 'center',
   },
   bookAuthor: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  emptyText: {
     fontSize: 16,
-  },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  actionButton: {
-    backgroundColor: '#A67C52',
-    padding: 10,
-    borderRadius: 10,
+    textAlign: 'center',
+    marginTop: 10,
   },
 });
 

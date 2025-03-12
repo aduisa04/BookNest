@@ -1,5 +1,5 @@
-// BookNest/src/screens/FavoritesScreen.jsx
-import React, { useState, useCallback } from 'react';
+// BookNest/src/screens/BookListScreen.jsx
+import React, { useEffect, useState, useCallback } from 'react';
 import { 
   View, 
   Text, 
@@ -15,28 +15,22 @@ import { Ionicons } from '@expo/vector-icons';
 import { getDbConnection, deleteBook, toggleFavorite } from '../database/db';
 import { useTheme } from '../context/ThemeContext';
 
-const FavoritesScreen = () => {
+const BookListScreen = () => {
   const navigation = useNavigation();
   const { theme } = useTheme();
-  const [favoriteBooks, setFavoriteBooks] = useState([]);
+  const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const refreshFavorites = async () => {
-    try {
-      const db = await getDbConnection();
-      const result = await db.getAllAsync('SELECT * FROM books WHERE favorite = 1');
-      console.log("Favorites query result:", result);
-      setFavoriteBooks(result || []);
-      setLoading(false);
-    } catch (error) {
-      console.error("Error refreshing favorites:", error);
-      setLoading(false);
-    }
+  const refreshBooks = async () => {
+    const db = await getDbConnection();
+    const result = await db.getAllAsync('SELECT * FROM books');
+    setBooks(result);
+    setLoading(false);
   };
 
   useFocusEffect(
     useCallback(() => {
-      refreshFavorites();
+      refreshBooks();
     }, [])
   );
 
@@ -48,7 +42,7 @@ const FavoritesScreen = () => {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
-          onPress: async () => await deleteBook(bookId, refreshFavorites),
+          onPress: async () => await deleteBook(bookId, refreshBooks),
         },
       ],
       { cancelable: true }
@@ -56,9 +50,10 @@ const FavoritesScreen = () => {
   };
 
   const handleToggleFavorite = async (book) => {
-    await toggleFavorite(book.id, book.favorite, refreshFavorites);
+    await toggleFavorite(book.id, book.favorite, refreshBooks);
   };
 
+  // Render each book item in a vertical card layout.
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={[styles.bookCard, { backgroundColor: theme.cardBackground }]}
@@ -114,21 +109,13 @@ const FavoritesScreen = () => {
     );
   }
 
-  if (favoriteBooks.length === 0) {
-    return (
-      <View style={[styles.emptyContainer, { backgroundColor: theme.background }]}>
-        <Text style={[styles.emptyText, { color: theme.text }]}>No favorite books found.</Text>
-      </View>
-    );
-  }
-
   return (
     <View style={[styles.outerContainer, { backgroundColor: theme.background }]}>
       <FlatList
-        data={favoriteBooks}
+        data={books}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={[styles.listContainer, { marginTop: 20 }]} // Added marginTop for spacing
       />
     </View>
   );
@@ -142,20 +129,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 20,
-    fontWeight: 'bold',
   },
   listContainer: {
     paddingHorizontal: 20,
     paddingBottom: 20,
+    // marginTop added here for extra space from header if needed
     marginTop: 20,
   },
   bookCard: {
@@ -198,7 +176,8 @@ const styles = StyleSheet.create({
   actionButton: {
     padding: 8,
     borderRadius: 8,
+    marginHorizontal: 5,
   },
 });
 
-export default FavoritesScreen;
+export default BookListScreen;

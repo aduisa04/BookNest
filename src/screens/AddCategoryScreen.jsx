@@ -1,7 +1,7 @@
 // BookNest/src/screens/AddCategoryScreen.jsx
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, Button, Alert, FlatList, Text, StyleSheet } from 'react-native';
-import { addCategory, getCategories } from '../database/db';
+import { View, TextInput, Button, Alert, FlatList, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { addCategory, getCategories, deleteCategory } from '../database/db';
 import { useTheme } from '../context/ThemeContext';
 
 const AddCategoryScreen = () => {
@@ -28,6 +28,30 @@ const AddCategoryScreen = () => {
     setCategoryName('');
   };
 
+  const handleDeleteCategory = async (categoryId) => {
+    Alert.alert(
+      'Delete Category',
+      'Are you sure you want to delete this category?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          onPress: async () => await deleteCategory(categoryId, fetchCategories),
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  const renderItem = ({ item }) => (
+    <View style={[styles.categoryItemContainer, { backgroundColor: theme.cardBackground }]}>
+      <Text style={[styles.categoryItem, { color: theme.text }]}>{item.name}</Text>
+      <TouchableOpacity onPress={() => handleDeleteCategory(item.id)} style={styles.deleteButton}>
+        <Text style={[styles.deleteButtonText, { color: theme.buttonBackground }]}>Delete</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Text style={[styles.header, { color: theme.text }]}>Add Category</Text>
@@ -45,11 +69,8 @@ const AddCategoryScreen = () => {
       <FlatList
         data={categories}
         keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <Text style={[styles.categoryItem, { backgroundColor: theme.cardBackground, color: theme.text }]}>
-            {item.name}
-          </Text>
-        )}
+        renderItem={renderItem}
+        contentContainerStyle={styles.listContainer}
       />
     </View>
   );
@@ -72,11 +93,28 @@ const styles = StyleSheet.create({
     borderRadius: 5, 
     fontSize: 16 
   },
+  listContainer: {
+    marginTop: 20,
+  },
+  categoryItemContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 10,
+    marginBottom: 5,
+    borderRadius: 5,
+  },
   categoryItem: { 
-    padding: 10, 
-    fontSize: 18, 
-    marginBottom: 5, 
-    borderRadius: 5 
+    fontSize: 18,
+  },
+  deleteButton: {
+    padding: 5,
+    borderRadius: 5,
+    // Optional: you can use a background color from theme if desired.
+  },
+  deleteButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

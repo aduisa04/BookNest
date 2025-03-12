@@ -109,3 +109,19 @@ export const toggleFavorite = async (bookId, currentFavorite, refreshBooks) => {
     console.error('❌ Error toggling favorite:', error);
   }
 };
+
+
+// In BookNest/src/database/db.js
+export const deleteCategory = async (categoryId, refreshCategories) => {
+  const db = await getDbConnection();
+  if (!db) return;
+  try {
+    await db.runAsync('DELETE FROM categories WHERE id = ?;', [categoryId]);
+    console.log(`✅ Category with ID ${categoryId} deleted!`);
+    if (refreshCategories) {
+      await refreshCategories();
+    }
+  } catch (error) {
+    console.error('❌ Error deleting category:', error);
+  }
+};
