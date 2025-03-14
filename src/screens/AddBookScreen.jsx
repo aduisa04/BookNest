@@ -1,21 +1,70 @@
-// BookNest/src/screens/AddBookScreen.jsx
 import React, { useState, useCallback } from 'react';
-import { useTheme } from '../context/ThemeContext';
 import { 
   ScrollView, 
   TextInput, 
-  Alert, 
   Text, 
   TouchableOpacity, 
   StyleSheet, 
   View, 
-  Image 
+  Image,
+  Modal
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { getCategories } from '../database/db';
+import { getCategories, getDbConnection } from '../database/db';
 import { Picker } from '@react-native-picker/picker';
-import { getDbConnection } from '../database/db';
 import * as ImagePicker from 'expo-image-picker';
+import { useTheme } from '../context/ThemeContext';
+
+// Custom Alert Component
+const CustomAlert = ({ visible, title, message, onClose }) => (
+  <Modal transparent visible={visible} animationType="fade">
+    <View style={alertStyles.modalBackground}>
+      <View style={alertStyles.alertContainer}>
+        <Text style={alertStyles.alertTitle}>{title}</Text>
+        <Text style={alertStyles.alertMessage}>{message}</Text>
+        <TouchableOpacity onPress={onClose} style={alertStyles.alertButton}>
+          <Text style={alertStyles.alertButtonText}>OK</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </Modal>
+);
+
+const alertStyles = StyleSheet.create({
+  modalBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  alertContainer: {
+    width: '80%',
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 20,
+    alignItems: 'center',
+  },
+  alertTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  alertMessage: {
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  alertButton: {
+    backgroundColor: '#A67C52',
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  alertButtonText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+});
 
 const AddBookScreen = () => {
   const navigation = useNavigation();
@@ -27,6 +76,29 @@ const AddBookScreen = () => {
   const [status, setStatus] = useState('Pending');
   const [notes, setNotes] = useState('');
   const [coverImage, setCoverImage] = useState(null);
+
+  // State for custom alert
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertTitle, setAlertTitle] = useState('');
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertCallback, setAlertCallback] = useState(null);
+
+  // Helper to show custom alert
+  const showAlert = (title, message, callback = null) => {
+    setAlertTitle(title);
+    setAlertMessage(message);
+    setAlertCallback(() => callback);
+    setAlertVisible(true);
+  };
+
+  // Dismiss alert and run callback if provided.
+  const handleCloseAlert = () => {
+    setAlertVisible(false);
+    if (alertCallback) {
+      alertCallback();
+      setAlertCallback(null);
+    }
+  };
 
   // Fetch categories and reset form fields when the screen gains focus.
   useFocusEffect(
@@ -54,16 +126,16 @@ const AddBookScreen = () => {
     }, [])
   );
 
-  // Launch image picker using the older API constant
+  // Launch image picker using updated API
   const pickImage = async () => {
     try {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permissionResult.granted) {
-        Alert.alert("Permission required", "Permission to access the gallery is required!");
+        showAlert("Permission required", "Permission to access the gallery is required!");
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images, // Use MediaTypeOptions here
+        mediaTypes: ImagePicker.MediaTypeOptions.Images, 
         allowsEditing: true,
         quality: 0.7,
       });
@@ -77,20 +149,20 @@ const AddBookScreen = () => {
       }
     } catch (error) {
       console.error("Error picking image:", error);
-      Alert.alert("Error", "An error occurred while picking the image.");
+      showAlert("Error", "An error occurred while picking the image.");
     }
   };
 
   const handleAddBook = async () => {
     console.log("📌 Debugging Add Book:", { title, author, selectedCategory, status, notes, coverImage });
     if (!title || !author || !selectedCategory || !status) {
-      Alert.alert('Error', 'Please fill in all fields.');
+      showAlert('Error', 'Please fill in all fields.');
       return;
     }
     try {
       const db = await getDbConnection();
       if (!db) {
-        Alert.alert('Error', 'Database connection failed.');
+        showAlert('Error', 'Database connection failed.');
         return;
       }
       // Insert the new book record including the coverImage URI
@@ -99,22 +171,23 @@ const AddBookScreen = () => {
         [title, author, selectedCategory, status, notes, coverImage]
       );
       console.log("✅ Book added successfully");
-      Alert.alert('Success', 'Book added successfully!');
-      // Clear the form fields after adding the book
-      setTitle('');
-      setAuthor('');
-      setNotes('');
-      setStatus('Pending');
-      if (categories.length > 0) {
-        setSelectedCategory(categories[0].name);
-      } else {
-        setSelectedCategory('');
-      }
-      setCoverImage(null);
-      navigation.goBack();
+      showAlert('Success', 'Book added successfully!', () => {
+        // Clear form fields and navigate back after dismissal
+        setTitle('');
+        setAuthor('');
+        setNotes('');
+        setStatus('Pending');
+        if (categories.length > 0) {
+          setSelectedCategory(categories[0].name);
+        } else {
+          setSelectedCategory('');
+        }
+        setCoverImage(null);
+        navigation.goBack();
+      });
     } catch (error) {
       console.error("❌ Unexpected error adding book:", error);
-      Alert.alert('Error', 'Failed to add book.');
+      showAlert('Error', 'Failed to add book.');
     }
   };
 
@@ -189,6 +262,12 @@ const AddBookScreen = () => {
           <Text style={[styles.buttonText, { color: theme.buttonText }]}>Add Book</Text>
         </TouchableOpacity>
       </View>
+      <CustomAlert 
+        visible={alertVisible}
+        title={alertTitle}
+        message={alertMessage}
+        onClose={handleCloseAlert}
+      />
     </ScrollView>
   );
 };

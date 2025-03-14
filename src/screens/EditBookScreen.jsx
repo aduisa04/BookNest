@@ -1,4 +1,3 @@
-// BookNest/src/screens/EditBookScreen.jsx
 import React, { useState, useEffect } from 'react';
 import { 
   ScrollView, 
@@ -62,7 +61,7 @@ const EditBookScreen = () => {
     }
   };
 
-  // Function to pick an image from the gallery
+  // Function to pick an image from the gallery (updated for Expo ImagePicker v13+)
   const pickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
@@ -74,8 +73,9 @@ const EditBookScreen = () => {
       allowsEditing: true,
       quality: 0.7,
     });
-    if (!result.cancelled) {
-      setCoverImage(result.uri);
+    // For newer versions of expo-image-picker:
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setCoverImage(result.assets[0].uri);
     }
   };
 

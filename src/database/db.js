@@ -28,7 +28,8 @@ export const setupDatabase = async () => {
         status TEXT NOT NULL,
         notes TEXT,
         favorite INTEGER DEFAULT 0,
-        coverImage TEXT
+        coverImage TEXT,
+        rating INTEGER DEFAULT 0  -- Added column for rating
       );
     `);
 
@@ -123,5 +124,20 @@ export const deleteCategory = async (categoryId, refreshCategories) => {
     }
   } catch (error) {
     console.error('❌ Error deleting category:', error);
+  }
+};
+
+export const updateBookRating = async (bookId, rating, refreshBooks) => {
+  const db = await getDbConnection();
+  if (!db) return;
+  
+  try {
+    await db.runAsync('UPDATE books SET rating = ? WHERE id = ?;', [rating, bookId]);
+    console.log(`✅ Updated rating for book ${bookId} to ${rating}`);
+    if (refreshBooks) {
+      await refreshBooks();
+    }
+  } catch (error) {
+    console.error('❌ Error updating rating:', error);
   }
 };

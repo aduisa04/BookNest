@@ -1,4 +1,3 @@
-// BookNest/src/screens/BookListScreen.jsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { 
   View, 
@@ -7,7 +6,8 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   ActivityIndicator, 
-  Image 
+  Image,
+  TextInput
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +21,9 @@ const BookListScreen = () => {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   
+  // State for search query
+  const [searchQuery, setSearchQuery] = useState("");
+
   // For custom alert state
   const [alertVisible, setAlertVisible] = useState(false);
   const [bookToDelete, setBookToDelete] = useState(null);
@@ -65,6 +68,16 @@ const BookListScreen = () => {
   const handleToggleFavorite = async (book) => {
     await toggleFavorite(book.id, book.favorite, refreshBooks);
   };
+
+  // Filter the books based on the search query (title, author, or category)
+  const filteredBooks = books.filter((book) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      book.title.toLowerCase().includes(query) ||
+      book.author.toLowerCase().includes(query) ||
+      book.category.toLowerCase().includes(query)
+    );
+  });
 
   // Render each book item in a vertical card layout.
   const renderItem = ({ item }) => (
@@ -124,8 +137,18 @@ const BookListScreen = () => {
 
   return (
     <View style={[styles.outerContainer, { backgroundColor: theme.background }]}>
+      <View style={styles.searchContainer}>
+        <Ionicons name="search-outline" size={24} color={theme.text} style={styles.searchIcon} />
+        <TextInput 
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search by title, author, or category"
+          style={[styles.searchInput, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }]}
+          placeholderTextColor={theme.text}
+        />
+      </View>
       <FlatList
-        data={books}
+        data={filteredBooks}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
         contentContainerStyle={[styles.listContainer, { marginTop: 20 }]}
@@ -149,6 +172,22 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 16,
   },
   listContainer: {
     paddingHorizontal: 20,

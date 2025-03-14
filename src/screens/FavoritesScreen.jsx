@@ -1,5 +1,4 @@
-// BookNest/src/screens/FavoritesScreen.jsx
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -7,16 +6,54 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   ActivityIndicator, 
-  Alert, 
-  Image 
+  Image,
+  Animated
 } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { getDbConnection, deleteBook, toggleFavorite } from '../database/db';
+import { getDbConnection, updateBookRating } from '../database/db';
 import { useTheme } from '../context/ThemeContext';
 
+// A component for each animated star
+const AnimatedStar = ({ filled, onPress, theme }) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1.2,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 3,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+    onPress();
+  };
+
+  return (
+    <TouchableOpacity
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      activeOpacity={0.7}
+    >
+      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+        <Ionicons
+          name={filled ? "star" : "star-outline"}
+          size={36}
+          color={filled ? "#FFD700" : "#CCCCCC"}
+          style={{ marginHorizontal: 8 }}
+        />
+      </Animated.View>
+    </TouchableOpacity>
+  );
+};
+
 const FavoritesScreen = () => {
-  const navigation = useNavigation();
   const { theme } = useTheme();
   const [favoriteBooks, setFavoriteBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,30 +77,34 @@ const FavoritesScreen = () => {
     }, [])
   );
 
-  const handleDeleteBook = (bookId) => {
-    Alert.alert(
-      'Delete Book',
-      'Are you sure you want to delete this book?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          onPress: async () => await deleteBook(bookId, refreshFavorites),
-        },
-      ],
-      { cancelable: true }
+  // Update rating and refresh the list
+  const handleRating = async (bookId, rating) => {
+    await updateBookRating(bookId, rating, refreshFavorites);
+  };
+
+  // Render the 5-star rating UI using the AnimatedStar component with toggle logic
+  const renderStars = (book) => {
+    return (
+      <View style={styles.starContainer}>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <AnimatedStar
+            key={star}
+            filled={star <= book.rating}
+            onPress={() => {
+              // Toggle: if tapped star is already selected, set rating to 0; otherwise, set to the star value.
+              const newRating = (book.rating === star) ? 0 : star;
+              handleRating(book.id, newRating);
+            }}
+            theme={theme}
+          />
+        ))}
+      </View>
     );
   };
 
-  const handleToggleFavorite = async (book) => {
-    await toggleFavorite(book.id, book.favorite, refreshFavorites);
-  };
-
+  // Render each book card as a static view (without navigation)
   const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={[styles.bookCard, { backgroundColor: theme.cardBackground }]}
-      onPress={() => navigation.navigate('BookDetails', { bookId: item.id })}
-    >
+    <View style={[styles.bookCard, { backgroundColor: theme.cardBackground }]}>
       {item.coverImage ? (
         <Image source={{ uri: item.coverImage }} style={styles.coverImage} resizeMode="cover" />
       ) : (
@@ -78,32 +119,12 @@ const FavoritesScreen = () => {
         <Text style={[styles.bookAuthor, { color: theme.text }]} numberOfLines={1}>
           by {item.author}
         </Text>
+        <Text style={{ color: theme.text, marginTop: 5 }}>
+          Rating: {item.rating} star{item.rating === 1 ? '' : 's'}
+        </Text>
       </View>
-      <View style={styles.actionsRow}>
-        <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: theme.buttonBackground }]}
-          onPress={() => navigation.navigate('EditBook', { bookId: item.id })}
-        >
-          <Ionicons name="create-outline" size={24} color={theme.buttonText} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: theme.buttonBackground }]}
-          onPress={() => handleDeleteBook(item.id)}
-        >
-          <Ionicons name="trash-outline" size={24} color={theme.buttonText} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: theme.buttonBackground }]}
-          onPress={() => handleToggleFavorite(item)}
-        >
-          {item.favorite ? (
-            <Ionicons name="star" size={24} color="#FFD700" />
-          ) : (
-            <Ionicons name="star-outline" size={24} color={theme.buttonText} />
-          )}
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
+      {renderStars(item)}
+    </View>
   );
 
   if (loading) {
@@ -142,7 +163,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    
   },
   emptyContainer: {
     flex: 1,
@@ -190,14 +210,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 4,
   },
-  actionsRow: {
+  starContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 10,
-  },
-  actionButton: {
-    padding: 8,
-    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 15,
+    backgroundColor: '#f9f9f9',
+    borderTopWidth: 1,
+    borderColor: '#eee',
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
   },
 });
 
