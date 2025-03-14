@@ -7,25 +7,34 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   ActivityIndicator, 
-  Alert, 
   Image 
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getDbConnection, deleteBook, toggleFavorite } from '../database/db';
 import { useTheme } from '../context/ThemeContext';
+import CustomAlert from '../context/CustomAlert';
 
 const BookListScreen = () => {
   const navigation = useNavigation();
   const { theme } = useTheme();
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // For custom alert state
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [bookToDelete, setBookToDelete] = useState(null);
 
   const refreshBooks = async () => {
-    const db = await getDbConnection();
-    const result = await db.getAllAsync('SELECT * FROM books');
-    setBooks(result);
-    setLoading(false);
+    try {
+      const db = await getDbConnection();
+      const result = await db.getAllAsync('SELECT * FROM books');
+      setBooks(result);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching books:", error);
+      setLoading(false);
+    }
   };
 
   useFocusEffect(
@@ -34,19 +43,23 @@ const BookListScreen = () => {
     }, [])
   );
 
+  // Instead of using native Alert, show our custom alert
   const handleDeleteBook = (bookId) => {
-    Alert.alert(
-      'Delete Book',
-      'Are you sure you want to delete this book?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          onPress: async () => await deleteBook(bookId, refreshBooks),
-        },
-      ],
-      { cancelable: true }
-    );
+    setBookToDelete(bookId);
+    setAlertVisible(true);
+  };
+
+  const confirmDelete = async () => {
+    if (bookToDelete) {
+      await deleteBook(bookToDelete, refreshBooks);
+    }
+    setAlertVisible(false);
+    setBookToDelete(null);
+  };
+
+  const cancelDelete = () => {
+    setAlertVisible(false);
+    setBookToDelete(null);
   };
 
   const handleToggleFavorite = async (book) => {
@@ -115,7 +128,14 @@ const BookListScreen = () => {
         data={books}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
-        contentContainerStyle={[styles.listContainer, { marginTop: 20 }]} // Added marginTop for spacing
+        contentContainerStyle={[styles.listContainer, { marginTop: 20 }]}
+      />
+      <CustomAlert
+        visible={alertVisible}
+        title="Delete Book"
+        message="Are you sure you want to delete this book?"
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
       />
     </View>
   );
@@ -133,7 +153,6 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingHorizontal: 20,
     paddingBottom: 20,
-    // marginTop added here for extra space from header if needed
     marginTop: 20,
   },
   bookCard: {

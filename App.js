@@ -6,6 +6,7 @@ import { setupDatabase } from './src/database/db';
 import RootNavigator from './src/navigation/RootNavigator';
 import { ThemeProvider } from './src/context/ThemeContext';
 
+
 export default function App() {
   const [loading, setLoading] = useState(true);
 

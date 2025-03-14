@@ -1,5 +1,5 @@
 // BookNest/src/screens/HomeScreen.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
   View, 
   Text, 
@@ -7,22 +7,20 @@ import {
   FlatList, 
   Image, 
   StyleSheet, 
-  ActivityIndicator 
+  ActivityIndicator,
+  StatusBar
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { getDbConnection } from '../database/db';
 
 // Import images – adjust paths as needed
-import logo from '../../assets/booknest.png';
-import banner1 from '../../assets/banner1.png';
-import banner2 from '../../assets/banner2.png';
-import banner3 from '../../assets/banner3.png';
+import banner1 from '../../assets/b1.png';
+import banner2 from '../../assets/b2.png';
+import banner3 from '../../assets/b3.png';
 
 const HomeScreen = () => {
   const { theme } = useTheme();
-
-  // Banner images array (static/dummy; can be dynamic later)
   const banners = [banner1, banner2, banner3];
 
   // State for Recently Read (most recent added) books, limited to 3
@@ -37,7 +35,6 @@ const HomeScreen = () => {
   const fetchRecentBooks = async () => {
     try {
       const db = await getDbConnection();
-      // Order by id descending and limit to 3
       const results = await db.getAllAsync('SELECT * FROM books ORDER BY id DESC LIMIT 3');
       setRecentBooks(results || []);
       setLoadingRecent(false);
@@ -51,7 +48,6 @@ const HomeScreen = () => {
   const fetchFavoriteBooks = async () => {
     try {
       const db = await getDbConnection();
-      // Fetch favorite books ordered by id descending, limit to 3
       const results = await db.getAllAsync('SELECT * FROM books WHERE favorite = 1 ORDER BY id DESC LIMIT 3');
       setFavoriteBooks(results || []);
       setLoadingFavorites(false);
@@ -88,64 +84,76 @@ const HomeScreen = () => {
   );
 
   return (
-    <ScrollView style={[styles.outerContainer, { backgroundColor: theme.background }]} contentContainerStyle={styles.contentContainer}>
-      {/* Header Section */}
-      <View style={[styles.header, { backgroundColor: theme.buttonBackground }]}>
-        <View style={styles.brandContainer}>
-          <Image source={logo} style={styles.logo} resizeMode="contain" />
-          <Text style={[styles.brandText, { color: theme.buttonText }]}>BookNest</Text>
+    <>
+      {/* Set the status bar style so that the brown shows behind the notifications */}
+      <StatusBar barStyle="light-content" backgroundColor="#5d4037" />
+      <ScrollView
+        style={[styles.outerContainer, { backgroundColor: theme.background }]}
+        contentContainerStyle={styles.contentContainer}
+        stickyHeaderIndices={[0]}
+      >
+        {/* Header Background extends to the top; content is pushed down with extra padding */}
+        <View style={styles.headerContainer}>
+          <View style={styles.headerContent}>
+            <Image 
+              source={require('../../assets/booknest.png')} 
+              style={styles.logo} 
+              resizeMode="cover" 
+            />
+            <Text style={styles.headerLabelText}>BOOKNEST</Text>
+          </View>
         </View>
-      </View>
-
-      {/* Banner Scroller */}
-      <View style={styles.bannerContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.bannerScroll}>
-          {banners.map((banner, index) => (
-            <View key={index} style={styles.bannerWrapper}>
-              <Image source={banner} style={styles.bannerImage} resizeMode="cover" />
-            </View>
-          ))}
-        </ScrollView>
-      </View>
-
-      {/* Recently Read Section */}
-      <View style={styles.sectionContainer}>
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Recently Read</Text>
-        {loadingRecent ? (
-          <ActivityIndicator size="small" color={theme.buttonBackground} />
-        ) : recentBooks.length > 0 ? (
-          <FlatList
-            data={recentBooks}
-            horizontal
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderBookCard}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalList}
-          />
-        ) : (
-          <Text style={[styles.emptyText, { color: theme.text }]}>No recent books found.</Text>
-        )}
-      </View>
-
-      {/* Your Favorites Section */}
-      <View style={styles.sectionContainer}>
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Your Favorites</Text>
-        {loadingFavorites ? (
-          <ActivityIndicator size="small" color={theme.buttonBackground} />
-        ) : favoriteBooks.length > 0 ? (
-          <FlatList
-            data={favoriteBooks}
-            horizontal
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderBookCard}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalList}
-          />
-        ) : (
-          <Text style={[styles.emptyText, { color: theme.text }]}>No favorite books found.</Text>
-        )}
-      </View>
-    </ScrollView>
+  
+        {/* Banner Scroller */}
+        <View style={styles.bannerContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.bannerScroll}>
+            {banners.map((banner, index) => (
+              <View key={index} style={styles.bannerWrapper}>
+                <Image source={banner} style={styles.bannerImage} resizeMode="cover" />
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+  
+        {/* Recently Read Section */}
+        <View style={styles.sectionContainer}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Recently Read</Text>
+          {loadingRecent ? (
+            <ActivityIndicator size="small" color={theme.buttonBackground} />
+          ) : recentBooks.length > 0 ? (
+            <FlatList
+              data={recentBooks}
+              horizontal
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={renderBookCard}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalList}
+            />
+          ) : (
+            <Text style={[styles.emptyText, { color: theme.text }]}>No recent books found.</Text>
+          )}
+        </View>
+  
+        {/* Your Favorites Section */}
+        <View style={styles.sectionContainer}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Your Favorites</Text>
+          {loadingFavorites ? (
+            <ActivityIndicator size="small" color={theme.buttonBackground} />
+          ) : favoriteBooks.length > 0 ? (
+            <FlatList
+              data={favoriteBooks}
+              horizontal
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={renderBookCard}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalList}
+            />
+          ) : (
+            <Text style={[styles.emptyText, { color: theme.text }]}>No favorite books found.</Text>
+          )}
+        </View>
+      </ScrollView>
+    </>
   );
 };
 
@@ -154,32 +162,39 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingVertical: 20,
+    paddingBottom: 70,
   },
-  header: {
-    height: 80,
+  headerContainer: {
+    backgroundColor: '#5d4037',
+    paddingTop: 5,  // Extra padding pushes logo/text further down
+    paddingBottom: 20,
     paddingHorizontal: 20,
-    justifyContent: 'center',
-    marginBottom: 20,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
     shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 2 },
     elevation: 5,
   },
-  brandContainer: {
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   logo: {
-    width: 80,
-    height: 80,
-    marginRight: 10,
+    width: 125,      // Unchanged
+    height: 90,      // Unchanged
+    borderRadius: 45, // Unchanged
+    marginRight: -40, // Unchanged marginRight functionality
   },
-  brandText: {
-    fontSize: 32,
-    fontWeight: 'bold',
+  headerLabelText: {
+    fontFamily: 'PlayfairDisplay_400Regular', // Ensure this custom font is installed
+    fontSize: 30,
+    color: '#ffffff',
+    textShadowColor: 'rgba(0, 0, 0, 0.25)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
+    marginRight: 20, // Unchanged
   },
   bannerContainer: {
     marginHorizontal: 20,

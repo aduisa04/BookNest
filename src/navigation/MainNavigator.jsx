@@ -42,7 +42,7 @@ export default function MainNavigator() {
         headerTintColor: '#fff',
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ headerTitle: 'Home' }} />
+      <Tab.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
       <Tab.Screen name="Book List" component={BookListScreen} options={{ headerTitle: 'Book List' }} />
       <Tab.Screen name="Add Book" component={AddBookScreen} options={{ headerTitle: 'Add Book' }} />
       <Tab.Screen name="Favorites" component={FavoritesScreen} options={{ headerTitle: 'Favorites' }} />
