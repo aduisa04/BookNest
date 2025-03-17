@@ -1,3 +1,4 @@
+// BookNest/src/screens/EditBookScreen.jsx
 import React, { useState, useEffect } from 'react';
 import { 
   ScrollView, 
@@ -16,12 +17,22 @@ import { Picker } from '@react-native-picker/picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 
+// Define new color scheme
+const newColors = {
+  primary: "#C8B6FF",       // Mauve
+  secondary: "#B8C0FF",     // Periwinkle
+  text: "#333333",
+  background: "#FFFFFF",
+  cardBackground: "#F8F8F8",
+  buttonBackground: "#B8C0FF",
+  buttonText: "#FFFFFF",
+};
+
 const EditBookScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { bookId } = route.params;
-  const { theme } = useTheme();
-
+  // Override theme values using newColors for this screen.
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [categories, setCategories] = useState([]);
@@ -54,14 +65,13 @@ const EditBookScreen = () => {
         setStatus(result.status);
         setNotes(result.notes);
         setSelectedCategory(result.category);
-        setCoverImage(result.coverImage); // Set existing cover image, if available
+        setCoverImage(result.coverImage);
       }
     } catch (error) {
       console.error('❌ Error fetching book details:', error);
     }
   };
 
-  // Function to pick an image from the gallery (updated for Expo ImagePicker v13+)
   const pickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
@@ -73,7 +83,6 @@ const EditBookScreen = () => {
       allowsEditing: true,
       quality: 0.7,
     });
-    // For newer versions of expo-image-picker:
     if (!result.canceled && result.assets && result.assets.length > 0) {
       setCoverImage(result.assets[0].uri);
     }
@@ -99,73 +108,70 @@ const EditBookScreen = () => {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
+    <ScrollView style={[styles.container, { backgroundColor: newColors.background }]}>
       <View style={styles.header}>
-        <Ionicons name="create-outline" size={28} color={theme.buttonBackground} />
-        <Text style={[styles.headerText, { color: theme.text }]}>Edit Book</Text>
+        <Ionicons name="create-outline" size={28} color={newColors.buttonBackground} />
+        <Text style={[styles.headerText, { color: newColors.text }]}>Edit Book</Text>
       </View>
       <TextInput 
         placeholder="Title" 
         value={title} 
         onChangeText={setTitle} 
-        style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text }]} 
-        placeholderTextColor={theme.text}
+        style={[styles.input, { backgroundColor: newColors.background, color: newColors.text, borderColor: newColors.secondary }]} 
+        placeholderTextColor={newColors.text}
       />
       <TextInput 
         placeholder="Author" 
         value={author} 
         onChangeText={setAuthor} 
-        style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text }]} 
-        placeholderTextColor={theme.text}
+        style={[styles.input, { backgroundColor: newColors.background, color: newColors.text, borderColor: newColors.secondary }]} 
+        placeholderTextColor={newColors.text}
       />
-      <Text style={[styles.label, { color: theme.text }]}>Select Status</Text>
-      <View style={[styles.pickerContainer, { backgroundColor: theme.inputBackground, borderColor: theme.border }]}>
+      <Text style={[styles.label, { color: newColors.text }]}>Select Status</Text>
+      <View style={[styles.pickerContainer, { backgroundColor: newColors.background, borderColor: newColors.secondary }]}>
         <Picker 
           selectedValue={status} 
           onValueChange={setStatus} 
-          style={[styles.picker, { color: theme.text }]}
-          itemStyle={{ color: theme.text }}
+          style={[styles.picker, { color: newColors.text }]}
+          itemStyle={{ color: newColors.text }}
         >
           <Picker.Item label="Pending" value="Pending" />
           <Picker.Item label="Finished" value="Finished" />
         </Picker>
       </View>
-      <Text style={[styles.label, { color: theme.text }]}>Select Category</Text>
-      <View style={[styles.pickerContainer, { backgroundColor: theme.inputBackground, borderColor: theme.border }]}>
+      <Text style={[styles.label, { color: newColors.text }]}>Select Category</Text>
+      <View style={[styles.pickerContainer, { backgroundColor: newColors.background, borderColor: newColors.secondary }]}>
         <Picker 
           selectedValue={selectedCategory} 
           onValueChange={setSelectedCategory} 
-          style={[styles.picker, { color: theme.text }]}
-          itemStyle={{ color: theme.text }}
+          style={[styles.picker, { color: newColors.text }]}
+          itemStyle={{ color: newColors.text }}
         >
           {categories.map((category) => (
             <Picker.Item key={category.id} label={category.name} value={category.name} />
           ))}
         </Picker>
       </View>
-      <Text style={[styles.label, { color: theme.text }]}>Notes</Text>
+      <Text style={[styles.label, { color: newColors.text }]}>Notes</Text>
       <TextInput
         placeholder="Enter book notes..."
         value={notes}
         onChangeText={setNotes}
-        style={[styles.input, styles.notesInput, { backgroundColor: theme.inputBackground, color: theme.text }]}
+        style={[styles.input, styles.notesInput, { backgroundColor: newColors.background, color: newColors.text, borderColor: newColors.secondary }]}
         multiline
-        placeholderTextColor={theme.text}
+        placeholderTextColor={newColors.text}
       />
-
-      {/* Cover Image Section */}
-      <TouchableOpacity style={[styles.imageButton, { backgroundColor: theme.buttonBackground }]} onPress={pickImage}>
-        <Text style={[styles.imageButtonText, { color: theme.buttonText }]}>
+      <TouchableOpacity style={[styles.imageButton, { backgroundColor: newColors.buttonBackground }]} onPress={pickImage}>
+        <Text style={[styles.imageButtonText, { color: newColors.buttonText }]}>
           {coverImage ? 'Change Cover Image' : 'Select Cover Image'}
         </Text>
       </TouchableOpacity>
       {coverImage && (
         <Image source={{ uri: coverImage }} style={styles.coverPreview} resizeMode="cover" />
       )}
-
-      <TouchableOpacity style={[styles.button, { backgroundColor: theme.buttonBackground }]} onPress={handleUpdateBook}>
-        <Ionicons name="save-outline" size={24} color={theme.buttonText} />
-        <Text style={[styles.buttonText, { color: theme.buttonText }]}> Save Changes</Text>
+      <TouchableOpacity style={[styles.button, { backgroundColor: newColors.buttonBackground }]} onPress={handleUpdateBook}>
+        <Ionicons name="save-outline" size={24} color={newColors.buttonText} />
+        <Text style={[styles.buttonText, { color: newColors.buttonText }]}> Save Changes</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -188,7 +194,6 @@ const styles = StyleSheet.create({
   },
   input: { 
     borderWidth: 1, 
-    borderColor: '#A67C52', 
     padding: 12, 
     marginBottom: 15, 
     borderRadius: 8, 
@@ -205,7 +210,6 @@ const styles = StyleSheet.create({
   },
   pickerContainer: {
     borderWidth: 1,
-    borderColor: '#A67C52',
     borderRadius: 8,
     marginBottom: 15,
     overflow: 'hidden',

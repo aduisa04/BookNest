@@ -12,10 +12,18 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getDbConnection, updateBookRating } from '../database/db';
-import { useTheme } from '../context/ThemeContext';
 
-// A component for each animated star
-const AnimatedStar = ({ filled, onPress, theme }) => {
+const theme = {
+  primary: "#C8B6FF",
+  secondary: "#B8C0FF",
+  text: "#333333",
+  background: "#FFFFFF",
+  cardBackground: "#F8F8F8",
+  buttonBackground: "#B8C0FF",
+  buttonText: "#FFFFFF",
+};
+
+const AnimatedStar = ({ filled, onPress }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   
   const handlePressIn = () => {
@@ -36,17 +44,13 @@ const AnimatedStar = ({ filled, onPress, theme }) => {
   };
 
   return (
-    <TouchableOpacity
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      activeOpacity={0.7}
-    >
+    <TouchableOpacity onPressIn={handlePressIn} onPressOut={handlePressOut} activeOpacity={0.7}>
       <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
         <Ionicons
           name={filled ? "star" : "star-outline"}
-          size={36}
+          size={32}
           color={filled ? "#FFD700" : "#CCCCCC"}
-          style={{ marginHorizontal: 8 }}
+          style={{ marginHorizontal: 6 }}
         />
       </Animated.View>
     </TouchableOpacity>
@@ -54,7 +58,6 @@ const AnimatedStar = ({ filled, onPress, theme }) => {
 };
 
 const FavoritesScreen = () => {
-  const { theme } = useTheme();
   const [favoriteBooks, setFavoriteBooks] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -62,7 +65,6 @@ const FavoritesScreen = () => {
     try {
       const db = await getDbConnection();
       const result = await db.getAllAsync('SELECT * FROM books WHERE favorite = 1');
-      console.log("Favorites query result:", result);
       setFavoriteBooks(result || []);
       setLoading(false);
     } catch (error) {
@@ -77,39 +79,29 @@ const FavoritesScreen = () => {
     }, [])
   );
 
-  // Update rating and refresh the list
   const handleRating = async (bookId, rating) => {
     await updateBookRating(bookId, rating, refreshFavorites);
   };
 
-  // Render the 5-star rating UI using the AnimatedStar component with toggle logic
-  const renderStars = (book) => {
-    return (
-      <View style={styles.starContainer}>
-        {[1, 2, 3, 4, 5].map((star) => (
-          <AnimatedStar
-            key={star}
-            filled={star <= book.rating}
-            onPress={() => {
-              // Toggle: if tapped star is already selected, set rating to 0; otherwise, set to the star value.
-              const newRating = (book.rating === star) ? 0 : star;
-              handleRating(book.id, newRating);
-            }}
-            theme={theme}
-          />
-        ))}
-      </View>
-    );
-  };
+  const renderStars = (book) => (
+    <View style={styles.starContainer}>
+      {[1, 2, 3, 4, 5].map((star) => (
+        <AnimatedStar
+          key={star}
+          filled={star <= book.rating}
+          onPress={() => handleRating(book.id, book.rating === star ? 0 : star)}
+        />
+      ))}
+    </View>
+  );
 
-  // Render each book card as a static view (without navigation)
   const renderItem = ({ item }) => (
     <View style={[styles.bookCard, { backgroundColor: theme.cardBackground }]}>
       {item.coverImage ? (
         <Image source={{ uri: item.coverImage }} style={styles.coverImage} resizeMode="cover" />
       ) : (
-        <View style={[styles.coverPlaceholder, { backgroundColor: theme.inputBackground }]}>
-          <Ionicons name="image" size={40} color={theme.border} />
+        <View style={[styles.coverPlaceholder, { backgroundColor: theme.background }]}>
+          <Ionicons name="image" size={40} color={theme.text} />
         </View>
       )}
       <View style={styles.detailsContainer}>
@@ -119,7 +111,7 @@ const FavoritesScreen = () => {
         <Text style={[styles.bookAuthor, { color: theme.text }]} numberOfLines={1}>
           by {item.author}
         </Text>
-        <Text style={{ color: theme.text, marginTop: 5 }}>
+        <Text style={[styles.bookRating, { color: theme.text }]}>
           Rating: {item.rating} star{item.rating === 1 ? '' : 's'}
         </Text>
       </View>
@@ -158,6 +150,7 @@ const FavoritesScreen = () => {
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
+    paddingHorizontal: 10,
   },
   loaderContainer: {
     flex: 1,
@@ -170,22 +163,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '600',
   },
   listContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    marginTop: 20,
+    paddingVertical: 20,
   },
   bookCard: {
     borderRadius: 12,
     marginBottom: 15,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 5,
+    elevation: 4,
   },
   coverImage: {
     width: '100%',
@@ -200,7 +192,7 @@ const styles = StyleSheet.create({
   detailsContainer: {
     padding: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    borderBottomColor: '#DDD',
   },
   bookTitle: {
     fontSize: 20,
@@ -210,14 +202,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 4,
   },
+  bookRating: {
+    fontSize: 14,
+    marginTop: 5,
+  },
   starContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 15,
-    backgroundColor: '#f9f9f9',
+    paddingVertical: 12,
+    backgroundColor: '#F0F0F0',
     borderTopWidth: 1,
-    borderColor: '#eee',
+    borderColor: '#EEE',
     borderBottomLeftRadius: 8,
     borderBottomRightRadius: 8,
   },

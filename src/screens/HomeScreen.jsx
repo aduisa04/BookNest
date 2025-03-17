@@ -8,22 +8,26 @@ import {
   Image, 
   StyleSheet, 
   ActivityIndicator,
-  StatusBar
+  StatusBar,
+  TouchableOpacity
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { getDbConnection } from '../database/db';
+import { Ionicons } from '@expo/vector-icons';
+import * as Animatable from 'react-native-animatable';
 
-// Import images – adjust paths as needed
+// Import banner images – adjust paths as needed
 import banner1 from '../../assets/b1.png';
 import banner2 from '../../assets/b2.png';
 import banner3 from '../../assets/b3.png';
 
 const HomeScreen = () => {
   const { theme } = useTheme();
+  const navigation = useNavigation();
   const banners = [banner1, banner2, banner3];
 
-  // State for Recently Read (most recent added) books, limited to 3
+  // State for Recently Read books, limited to 3
   const [recentBooks, setRecentBooks] = useState([]);
   const [loadingRecent, setLoadingRecent] = useState(true);
 
@@ -31,11 +35,11 @@ const HomeScreen = () => {
   const [favoriteBooks, setFavoriteBooks] = useState([]);
   const [loadingFavorites, setLoadingFavorites] = useState(true);
 
-  // Fetch the 3 most recent books (assuming higher id means more recent)
+  // Fetch the 3 most recent finished books (assuming that finished books have status != 'pending')
   const fetchRecentBooks = async () => {
     try {
       const db = await getDbConnection();
-      const results = await db.getAllAsync('SELECT * FROM books ORDER BY id DESC LIMIT 3');
+      const results = await db.getAllAsync("SELECT * FROM books WHERE status != 'pending' ORDER BY id DESC LIMIT 3");
       setRecentBooks(results || []);
       setLoadingRecent(false);
     } catch (error) {
@@ -48,7 +52,7 @@ const HomeScreen = () => {
   const fetchFavoriteBooks = async () => {
     try {
       const db = await getDbConnection();
-      const results = await db.getAllAsync('SELECT * FROM books WHERE favorite = 1 ORDER BY id DESC LIMIT 3');
+      const results = await db.getAllAsync("SELECT * FROM books WHERE favorite = 1 ORDER BY id DESC LIMIT 3");
       setFavoriteBooks(results || []);
       setLoadingFavorites(false);
     } catch (error) {
@@ -64,9 +68,9 @@ const HomeScreen = () => {
     }, [])
   );
 
-  // Render a card for a single book item (used in both sections)
+  // Render a card for a single book item (used in both sections) with fadeInUp animation
   const renderBookCard = ({ item }) => (
-    <View style={[styles.bookCard, { backgroundColor: theme.cardBackground }]}>
+    <Animatable.View animation="fadeInUp" duration={600} style={[styles.bookCard, { backgroundColor: theme.cardBackground }]}>
       {item.coverImage ? (
         <Image source={{ uri: item.coverImage }} style={styles.bookCover} resizeMode="cover" />
       ) : (
@@ -80,43 +84,50 @@ const HomeScreen = () => {
       <Text style={[styles.bookAuthor, { color: theme.text }]} numberOfLines={1}>
         by {item.author}
       </Text>
-    </View>
+    </Animatable.View>
   );
 
   return (
     <>
-      {/* Set the status bar style so that the brown shows behind the notifications */}
-      <StatusBar barStyle="light-content" backgroundColor="#5d4037" />
+      {/* StatusBar uses the primary color and dynamic statusBar style */}
+      <StatusBar barStyle={theme.statusBarStyle || "dark-content"} backgroundColor={theme.primary} />
       <ScrollView
         style={[styles.outerContainer, { backgroundColor: theme.background }]}
         contentContainerStyle={styles.contentContainer}
         stickyHeaderIndices={[0]}
       >
-        {/* Header Background extends to the top; content is pushed down with extra padding */}
-        <View style={styles.headerContainer}>
+        {/* Animated Header with explicit mauve background */}
+        <Animatable.View animation="slideInDown" duration={800} style={[styles.headerContainer, { backgroundColor: "#C8B6FF" }]}>
           <View style={styles.headerContent}>
             <Image 
               source={require('../../assets/booknest.png')} 
               style={styles.logo} 
               resizeMode="cover" 
             />
-            <Text style={styles.headerLabelText}>BOOKNEST</Text>
+            <Animatable.Text 
+              animation="pulse" 
+              easing="ease-out" 
+              iterationCount="infinite" 
+              style={[styles.headerLabelText, { color: theme.text }]}
+            >
+              BOOKNEST
+            </Animatable.Text>
           </View>
-        </View>
+        </Animatable.View>
   
-        {/* Banner Scroller */}
-        <View style={styles.bannerContainer}>
+        {/* Animated Banner Scroller */}
+        <Animatable.View animation="fadeIn" duration={1000} style={styles.bannerContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.bannerScroll}>
             {banners.map((banner, index) => (
-              <View key={index} style={styles.bannerWrapper}>
+              <Animatable.View key={index} animation="zoomIn" duration={800} style={styles.bannerWrapper}>
                 <Image source={banner} style={styles.bannerImage} resizeMode="cover" />
-              </View>
+              </Animatable.View>
             ))}
           </ScrollView>
-        </View>
+        </Animatable.View>
   
         {/* Recently Read Section */}
-        <View style={styles.sectionContainer}>
+        <Animatable.View animation="fadeInUp" duration={800} delay={200} style={styles.sectionContainer}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Recently Read</Text>
           {loadingRecent ? (
             <ActivityIndicator size="small" color={theme.buttonBackground} />
@@ -132,10 +143,10 @@ const HomeScreen = () => {
           ) : (
             <Text style={[styles.emptyText, { color: theme.text }]}>No recent books found.</Text>
           )}
-        </View>
+        </Animatable.View>
   
-        {/* Your Favorites Section */}
-        <View style={styles.sectionContainer}>
+        {/* Favorites Section */}
+        <Animatable.View animation="fadeInUp" duration={800} delay={400} style={styles.sectionContainer}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Your Favorites</Text>
           {loadingFavorites ? (
             <ActivityIndicator size="small" color={theme.buttonBackground} />
@@ -151,7 +162,22 @@ const HomeScreen = () => {
           ) : (
             <Text style={[styles.emptyText, { color: theme.text }]}>No favorite books found.</Text>
           )}
-        </View>
+        </Animatable.View>
+  
+        {/* Reading Calendar Section */}
+        <Animatable.View animation="fadeInUp" duration={800} delay={600} style={styles.sectionContainer}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Reading Calendar</Text>
+          <TouchableOpacity 
+            style={[styles.calendarButton, { backgroundColor: theme.buttonBackground }]}
+            onPress={() => navigation.navigate('BookCalendar')}
+          >
+            <Ionicons name="calendar-outline" size={24} color={theme.text} />
+            <Text style={[styles.calendarButtonText, { color: theme.text }]}>
+              Set Finish Date
+            </Text>
+          </TouchableOpacity>
+        </Animatable.View>
+  
       </ScrollView>
     </>
   );
@@ -165,7 +191,6 @@ const styles = StyleSheet.create({
     paddingBottom: 70,
   },
   headerContainer: {
-    backgroundColor: '#5d4037',
     paddingTop: 5,  // Extra padding pushes logo/text further down
     paddingBottom: 20,
     paddingHorizontal: 20,
@@ -182,19 +207,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: {
-    width: 125,      // Unchanged
-    height: 90,      // Unchanged
-    borderRadius: 45, // Unchanged
-    marginRight: -40, // Unchanged marginRight functionality
+    width: 125,
+    height: 90,
+    borderRadius: 45,
+    marginRight: -40,
   },
   headerLabelText: {
-    fontFamily: 'PlayfairDisplay_400Regular', // Ensure this custom font is installed
+    fontFamily: 'PlayfairDisplay_400Regular',
     fontSize: 30,
-    color: '#ffffff',
     textShadowColor: 'rgba(0, 0, 0, 0.25)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 1,
-    marginRight: 20, // Unchanged
+    marginRight: 20,
   },
   bannerContainer: {
     marginHorizontal: 20,
@@ -237,6 +261,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
     elevation: 2,
   },
   bookCover: {
@@ -263,6 +288,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     marginTop: 10,
+  },
+  calendarButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+  },
+  calendarButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginLeft: 10,
   },
 });
 

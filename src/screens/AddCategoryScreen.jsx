@@ -1,3 +1,4 @@
+// BookNest/src/screens/AddCategoryScreen.jsx
 import React, { useState, useEffect } from 'react';
 import { 
   View, 
@@ -10,15 +11,24 @@ import {
 } from 'react-native';
 import { addCategory, getCategories, deleteCategory } from '../database/db';
 import { useTheme } from '../context/ThemeContext';
+import * as Animatable from 'react-native-animatable';
+
+// Define default color scheme (used as fallback)
+const newColors = {
+  primary: "#C8B6FF",    // Mauve (used for header background)
+  secondary: "#B8C0FF",  // Periwinkle (used for buttons and accents)
+  text: "#333333",       // Dark text for contrast
+  background: "#FFFFFF", // White background
+};
 
 // Custom Alert Component for simple alerts (one button)
 const CustomAlert = ({ visible, title, message, onClose }) => (
   <Modal transparent visible={visible} animationType="fade">
     <View style={alertStyles.modalBackground}>
-      <View style={alertStyles.alertContainer}>
-        <Text style={alertStyles.alertTitle}>{title}</Text>
-        <Text style={alertStyles.alertMessage}>{message}</Text>
-        <TouchableOpacity onPress={onClose} style={alertStyles.alertButton}>
+      <View style={[alertStyles.alertContainer, { backgroundColor: newColors.background }]}>
+        <Text style={[alertStyles.alertTitle, { color: newColors.text }]}>{title}</Text>
+        <Text style={[alertStyles.alertMessage, { color: newColors.text }]}>{message}</Text>
+        <TouchableOpacity onPress={onClose} style={[alertStyles.alertButton, { backgroundColor: newColors.secondary }]}>
           <Text style={alertStyles.alertButtonText}>OK</Text>
         </TouchableOpacity>
       </View>
@@ -30,9 +40,9 @@ const CustomAlert = ({ visible, title, message, onClose }) => (
 const ConfirmationAlert = ({ visible, title, message, onConfirm, onCancel }) => (
   <Modal transparent visible={visible} animationType="fade">
     <View style={alertStyles.modalBackground}>
-      <View style={alertStyles.alertContainer}>
-        <Text style={alertStyles.alertTitle}>{title}</Text>
-        <Text style={alertStyles.alertMessage}>{message}</Text>
+      <View style={[alertStyles.alertContainer, { backgroundColor: newColors.background }]}>
+        <Text style={[alertStyles.alertTitle, { color: newColors.text }]}>{title}</Text>
+        <Text style={[alertStyles.alertMessage, { color: newColors.text }]}>{message}</Text>
         <View style={alertStyles.buttonRow}>
           <TouchableOpacity 
             onPress={onCancel} 
@@ -42,7 +52,7 @@ const ConfirmationAlert = ({ visible, title, message, onConfirm, onCancel }) => 
           </TouchableOpacity>
           <TouchableOpacity 
             onPress={onConfirm} 
-            style={[alertStyles.alertButton, { backgroundColor: '#A67C52' }]}
+            style={[alertStyles.alertButton, { backgroundColor: newColors.secondary }]}
           >
             <Text style={alertStyles.alertButtonText}>Delete</Text>
           </TouchableOpacity>
@@ -61,7 +71,6 @@ const alertStyles = StyleSheet.create({
   },
   alertContainer: {
     width: '80%',
-    backgroundColor: '#fff',
     borderRadius: 8,
     padding: 20,
     alignItems: 'center',
@@ -94,6 +103,15 @@ const alertStyles = StyleSheet.create({
 
 const AddCategoryScreen = () => {
   const { theme } = useTheme();
+  // Use dynamic theme values with fallback to newColors
+  const currentTheme = {
+    background: theme.background || newColors.background,
+    text: theme.text || newColors.text,
+    inputBackground: theme.inputBackground || newColors.background,
+    cardBackground: theme.cardBackground || newColors.background,
+    border: theme.border || newColors.primary,
+  };
+
   const [categoryName, setCategoryName] = useState('');
   const [categories, setCategories] = useState([]);
 
@@ -169,7 +187,7 @@ const AddCategoryScreen = () => {
         setCategoryName('');
       });
     } catch (error) {
-      console.error('❌ Error adding category:', error);
+      console.error('Error adding category:', error);
       showAlert('Error', 'Failed to add category.');
     }
   };
@@ -185,28 +203,34 @@ const AddCategoryScreen = () => {
   };
 
   const renderItem = ({ item }) => (
-    <View style={[styles.categoryItemContainer, { backgroundColor: theme.cardBackground }]}>
-      <Text style={[styles.categoryItem, { color: theme.text }]}>{item.name}</Text>
+    <Animatable.View animation="fadeInUp" duration={600} style={[styles.categoryItemContainer, { backgroundColor: currentTheme.cardBackground }]}>
+      <Text style={[styles.categoryItem, { color: currentTheme.text }]}>{item.name}</Text>
       <TouchableOpacity onPress={() => handleDeleteCategory(item.id)} style={styles.deleteButton}>
-        <Text style={[styles.deleteButtonText, { color: theme.buttonBackground }]}>Delete</Text>
+        <Text style={[styles.deleteButtonText, { color: newColors.primary }]}>Delete</Text>
       </TouchableOpacity>
-    </View>
+    </Animatable.View>
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Text style={[styles.header, { color: theme.text }]}>Add Category</Text>
+    <Animatable.View animation="fadeIn" duration={800} style={[styles.container, { backgroundColor: currentTheme.background }]}>
+      {/* Animated Header with Mauve Background */}
+      <Animatable.View animation="slideInDown" duration={800} style={[styles.headerContainer, { backgroundColor: newColors.primary }]}>
+        <Animatable.Text animation="pulse" easing="ease-out" iterationCount="infinite" style={[styles.headerText, { color: currentTheme.text }]}>
+          Add Category
+        </Animatable.Text>
+      </Animatable.View>
+
       <TextInput
         placeholder="Enter Category Name"
         value={categoryName}
         onChangeText={setCategoryName}
         style={[
           styles.input,
-          { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.border }
+          { backgroundColor: currentTheme.inputBackground, color: currentTheme.text, borderColor: newColors.primary }
         ]}
-        placeholderTextColor={theme.text}
+        placeholderTextColor={currentTheme.text}
       />
-      <TouchableOpacity style={styles.button} onPress={handleAddCategory}>
+      <TouchableOpacity style={[styles.button, { backgroundColor: newColors.secondary }]} onPress={handleAddCategory}>
         <Text style={styles.buttonText}>Add Category</Text>
       </TouchableOpacity>
       <FlatList
@@ -228,7 +252,7 @@ const AddCategoryScreen = () => {
         onConfirm={handleConfirmDeletion}
         onCancel={handleCancelConfirmation}
       />
-    </View>
+    </Animatable.View>
   );
 };
 
@@ -237,10 +261,15 @@ const styles = StyleSheet.create({
     flex: 1, 
     padding: 20 
   },
-  header: { 
-    fontSize: 24, 
-    fontWeight: 'bold', 
-    marginBottom: 15 
+  headerContainer: {
+    paddingVertical: 15,
+    alignItems: 'center',
+    marginBottom: 20,
+    borderRadius: 10,
+  },
+  headerText: {
+    fontSize: 28,
+    fontWeight: 'bold',
   },
   input: { 
     borderWidth: 1, 
@@ -272,7 +301,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   button: {
-    backgroundColor: '#A67C52',
+    backgroundColor: newColors.secondary,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 30,
@@ -282,7 +311,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#fff', // Button text forced to white
+    color: '#fff',
   },
 });
 

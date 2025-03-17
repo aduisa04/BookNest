@@ -5,10 +5,27 @@ import { NavigationContainer } from '@react-navigation/native';
 import { setupDatabase } from './src/database/db';
 import RootNavigator from './src/navigation/RootNavigator';
 import { ThemeProvider } from './src/context/ThemeContext';
+import * as Notifications from 'expo-notifications';
 
+// Set up notification handler so alerts show even in the foreground.
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 export default function App() {
   const [loading, setLoading] = useState(true);
+
+  // Global notification listener (for debugging)
+  useEffect(() => {
+    const subscription = Notifications.addNotificationReceivedListener(notification => {
+      console.log("Global Notification Received:", notification);
+    });
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     const initializeDB = async () => {
