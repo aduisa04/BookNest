@@ -1,5 +1,3 @@
-// BookNest/src/screens/BookCalendarScreen.jsx
-
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -20,8 +18,9 @@ import * as Animatable from 'react-native-animatable';
 import * as Notifications from 'expo-notifications';
 import { getBooksFromDatabase, addBook, deleteBook } from '../database/db';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '../context/ThemeContext';
 
-// Define the color scheme
+// Define the default color scheme (fallback for light mode)
 const newColors = {
   primary: "#C8B6FF",
   secondary: "#B8C0FF",
@@ -47,6 +46,15 @@ const areNotificationsEnabled = async () => {
 // ReminderPicker Component (time-only picker)
 // ----------------------------------------------------------------------
 const ReminderPicker = ({ onSetReminder, onCancel }) => {
+  // Use the theme to apply dark mode colors
+  const { theme } = useTheme();
+  const currentTheme = {
+    background: theme.background || newColors.background,
+    text: theme.text || newColors.text,
+    primary: theme.primary || newColors.primary,
+    secondary: theme.secondary || newColors.secondary,
+  };
+
   const [time, setTime] = useState(new Date());
   const [show, setShow] = useState(false);
 
@@ -65,16 +73,16 @@ const ReminderPicker = ({ onSetReminder, onCancel }) => {
   };
 
   return (
-    <View style={reminderStyles.container}>
-      <Text style={reminderStyles.header}>Set Reminder Time</Text>
+    <View style={[reminderStyles.container, { backgroundColor: currentTheme.background }]}>
+      <Text style={[reminderStyles.header, { color: currentTheme.text }]}>Set Reminder Time</Text>
       <View style={reminderStyles.buttonContainer}>
         <Button 
           onPress={() => setShow(true)}
           title="Select Time"
-          color={newColors.primary}
+          color={currentTheme.primary}
         />
       </View>
-      <Text style={reminderStyles.selectedDateTime}>
+      <Text style={[reminderStyles.selectedDateTime, { color: currentTheme.text }]}>
         Selected Time: {time.toLocaleTimeString()}
       </Text>
       {show && (
@@ -82,7 +90,7 @@ const ReminderPicker = ({ onSetReminder, onCancel }) => {
           testID="timePicker"
           value={time}
           mode="time"
-          is24Hour={false}  // This will show AM/PM on supported devices
+          is24Hour={false}  // Shows AM/PM on supported devices
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
           onChange={onChange}
         />
@@ -97,7 +105,6 @@ const ReminderPicker = ({ onSetReminder, onCancel }) => {
 
 const reminderStyles = StyleSheet.create({
   container: {
-    backgroundColor: 'white',
     padding: 20,
     borderRadius: 10,
     width: '100%',
@@ -132,6 +139,15 @@ const reminderStyles = StyleSheet.create({
 // ----------------------------------------------------------------------
 
 function BookCalendarScreen() {
+  // Get the current theme from context and define fallback values
+  const { theme } = useTheme();
+  const currentTheme = {
+    background: theme.background || newColors.background,
+    text: theme.text || newColors.text,
+    primary: theme.primary || newColors.primary,
+    secondary: theme.secondary || newColors.secondary,
+  };
+
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [markedDates, setMarkedDates] = useState({});
@@ -166,12 +182,11 @@ function BookCalendarScreen() {
   const fetchBooks = async () => {
     try {
       const storedBooks = await getBooksFromDatabase();
-      console.log('Fetched books:', storedBooks);
       const dates = {};
       storedBooks.forEach((book) => {
         if (book.dueDate) {
           const dateKey = new Date(book.dueDate).toISOString().split('T')[0];
-          dates[dateKey] = { marked: true, dotColor: newColors.primary };
+          dates[dateKey] = { marked: true, dotColor: currentTheme.primary };
         }
       });
       setBooks(storedBooks);
@@ -201,7 +216,6 @@ function BookCalendarScreen() {
       newBookTime.getMinutes(),
       newBookTime.getSeconds()
     );
-    console.log("Final Due Date:", combinedDate.toLocaleString());
     return combinedDate;
   };
 
@@ -223,7 +237,7 @@ function BookCalendarScreen() {
           body: `Your book "${title}" is due!`,
           sound: 'default',
         },
-        trigger: dueDate, // Using a Date object to trigger the notification at the exact time
+        trigger: dueDate,
       });
       console.log(`Notification scheduled for "${title}" at ${dueDate.toLocaleString()}.`);
     } catch (error) {
@@ -259,12 +273,10 @@ function BookCalendarScreen() {
       Alert.alert("Error", error.message);
       return;
     }
-    const dueDateISO = dueDateObj.toISOString(); // Ensure the due date is in ISO format
+    const dueDateISO = dueDateObj.toISOString();
 
     try {
-      // Save the reminder as a book with category 'reminder'
       await addBook(newBookTitle, newBookAuthor, isReminder ? 'reminder' : 'General', 'pending', dueDateISO);
-      console.log(`Book "${newBookTitle}" added with dueDate ${dueDateISO}`);
       if (isReminder) {
         await scheduleDeadlineNotification(newBookTitle, dueDateObj);
       }
@@ -293,39 +305,37 @@ function BookCalendarScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color={newColors.primary} />
-        <Text style={{ color: newColors.text }}>Loading books...</Text>
+        <ActivityIndicator size="large" color={currentTheme.primary} />
+        <Text style={{ color: currentTheme.text }}>Loading books...</Text>
       </View>
     );
   }
 
   return (
-    <Animatable.View animation="fadeIn" duration={800} style={[styles.container, { backgroundColor: newColors.background }]}>
+    <Animatable.View animation="fadeIn" duration={800} style={[styles.container, { backgroundColor: currentTheme.background }]}>
       {/* Calendar View */}
       <Calendar
         markedDates={markedDates}
         onDayPress={(day) => {
-          console.log('Selected day:', day.dateString);
           setSelectedDate(day.dateString);
-          // Set a default time (09:00 AM) on the selected day using local time.
           const defaultTime = new Date(day.year, day.month - 1, day.day, 9, 0, 0);
           setNewBookTime(defaultTime);
           setShowAddModal(true);
         }}
         theme={{
-          backgroundColor: newColors.background,
-          calendarBackground: newColors.background,
-          textSectionTitleColor: newColors.text,
-          selectedDayBackgroundColor: newColors.primary,
-          selectedDayTextColor: newColors.background,
-          todayTextColor: newColors.primary,
-          dayTextColor: newColors.text,
+          backgroundColor: currentTheme.background,
+          calendarBackground: currentTheme.background,
+          textSectionTitleColor: currentTheme.text,
+          selectedDayBackgroundColor: currentTheme.primary,
+          selectedDayTextColor: currentTheme.background,
+          todayTextColor: currentTheme.primary,
+          dayTextColor: currentTheme.text,
           textDisabledColor: '#d9e1e8',
-          dotColor: newColors.primary,
-          selectedDotColor: newColors.background,
-          arrowColor: newColors.primary,
-          monthTextColor: newColors.text,
-          indicatorColor: newColors.primary,
+          dotColor: currentTheme.primary,
+          selectedDotColor: currentTheme.background,
+          arrowColor: currentTheme.primary,
+          monthTextColor: currentTheme.text,
+          indicatorColor: currentTheme.primary,
           textDayFontFamily: 'System',
           textMonthFontFamily: 'System',
           textDayHeaderFontFamily: 'System',
@@ -339,11 +349,11 @@ function BookCalendarScreen() {
       />
 
       {/* Book List */}
-      <Animatable.Text animation="fadeInUp" duration={800} style={[styles.header, { color: newColors.text }]}>
+      <Animatable.Text animation="fadeInUp" duration={800} style={[styles.header, { color: currentTheme.text }]}>
         📚 Your Books
       </Animatable.Text>
       {filteredBooks.length === 0 ? (
-        <Text style={[styles.noBooks, { color: newColors.text }]}>
+        <Text style={[styles.noBooks, { color: currentTheme.text }]}>
           {selectedDate ? 'No books for selected date.' : 'No books added yet.'}
         </Text>
       ) : (
@@ -351,14 +361,14 @@ function BookCalendarScreen() {
           data={filteredBooks}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
-            <Animatable.View animation="fadeInUp" duration={600} style={[styles.bookItem, { backgroundColor: newColors.background }]}>
-              <Text style={[styles.title, { color: newColors.text }]}>{item.title}</Text>
-              <Text style={[styles.dueDate, { color: newColors.text }]}>
+            <Animatable.View animation="fadeInUp" duration={600} style={[styles.bookItem, { backgroundColor: currentTheme.background }]}>
+              <Text style={[styles.title, { color: currentTheme.text }]}>{item.title}</Text>
+              <Text style={[styles.dueDate, { color: currentTheme.text }]}>
                 Due: {new Date(item.dueDate).toLocaleString()}
               </Text>
               <TouchableOpacity
                 onPress={() => deleteBook(item.id, fetchBooks)}
-                style={[styles.deleteButton, { backgroundColor: newColors.primary }]}
+                style={[styles.deleteButton, { backgroundColor: currentTheme.primary }]}
               >
                 <Text style={styles.deleteButtonText}>Delete</Text>
               </TouchableOpacity>
@@ -375,32 +385,32 @@ function BookCalendarScreen() {
         onRequestClose={() => setShowAddModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <Animatable.View animation="slideInUp" duration={800} style={[styles.modalContainer, { backgroundColor: newColors.background }]}>
-            <Text style={[styles.modalHeader, { color: newColors.text }]}>
+          <Animatable.View animation="slideInUp" duration={800} style={[styles.modalContainer, { backgroundColor: currentTheme.background }]}>
+            <Text style={[styles.modalHeader, { color: currentTheme.text }]}>
               Add Reminder for {selectedDate}
             </Text>
             <TextInput
-              style={[styles.input, { borderColor: newColors.primary, color: newColors.text, backgroundColor: newColors.background }]}
+              style={[styles.input, { borderColor: currentTheme.primary, color: currentTheme.text, backgroundColor: currentTheme.background }]}
               placeholder="Book Title"
-              placeholderTextColor={newColors.text}
+              placeholderTextColor={currentTheme.text}
               value={newBookTitle}
               onChangeText={setNewBookTitle}
             />
             <TextInput
-              style={[styles.input, { borderColor: newColors.primary, color: newColors.text, backgroundColor: newColors.background }]}
+              style={[styles.input, { borderColor: currentTheme.primary, color: currentTheme.text, backgroundColor: currentTheme.background }]}
               placeholder="Author"
-              placeholderTextColor={newColors.text}
+              placeholderTextColor={currentTheme.text}
               value={newBookAuthor}
               onChangeText={setNewBookAuthor}
             />
-            <Text style={[styles.reminderLabel, { color: newColors.text }]}>
+            <Text style={[styles.reminderLabel, { color: currentTheme.text }]}>
               Reminder Time: {newBookTime.toLocaleTimeString()}
             </Text>
             <TouchableOpacity
               style={[styles.remindMeButton, { backgroundColor: darkPurple }]}
               onPress={() => setShowReminderPicker(true)}
             >
-              <Text style={[styles.remindMeText, { color: newColors.background }]}>
+              <Text style={[styles.remindMeText, { color: currentTheme.background }]}>
                 Select Reminder
               </Text>
             </TouchableOpacity>
@@ -438,7 +448,6 @@ const styles = StyleSheet.create({
   },
   bookItem: {
     padding: 15,
-    backgroundColor: newColors.background,
     marginBottom: 10,
     borderRadius: 8,
     shadowColor: '#000',

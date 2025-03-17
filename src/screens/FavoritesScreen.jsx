@@ -12,8 +12,10 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getDbConnection, updateBookRating } from '../database/db';
+import { useTheme } from '../context/ThemeContext';
 
-const theme = {
+// Fallback default colors
+const newColors = {
   primary: "#C8B6FF",
   secondary: "#B8C0FF",
   text: "#333333",
@@ -58,6 +60,18 @@ const AnimatedStar = ({ filled, onPress }) => {
 };
 
 const FavoritesScreen = () => {
+  const { theme } = useTheme();
+  // Merge dynamic theme values with fallback defaults.
+  const currentTheme = {
+    primary: theme.primary || newColors.primary,
+    secondary: theme.secondary || newColors.secondary,
+    text: theme.text || newColors.text,
+    background: theme.background || newColors.background,
+    cardBackground: theme.cardBackground || newColors.cardBackground,
+    buttonBackground: theme.buttonBackground || newColors.buttonBackground,
+    buttonText: theme.buttonText || newColors.buttonText,
+  };
+
   const [favoriteBooks, setFavoriteBooks] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -84,7 +98,10 @@ const FavoritesScreen = () => {
   };
 
   const renderStars = (book) => (
-    <View style={styles.starContainer}>
+    <View style={[styles.starContainer, { 
+      backgroundColor: currentTheme.cardBackground, 
+      borderColor: currentTheme.secondary 
+    }]}>
       {[1, 2, 3, 4, 5].map((star) => (
         <AnimatedStar
           key={star}
@@ -96,22 +113,22 @@ const FavoritesScreen = () => {
   );
 
   const renderItem = ({ item }) => (
-    <View style={[styles.bookCard, { backgroundColor: theme.cardBackground }]}>
+    <View style={[styles.bookCard, { backgroundColor: currentTheme.cardBackground }]}>
       {item.coverImage ? (
         <Image source={{ uri: item.coverImage }} style={styles.coverImage} resizeMode="cover" />
       ) : (
-        <View style={[styles.coverPlaceholder, { backgroundColor: theme.background }]}>
-          <Ionicons name="image" size={40} color={theme.text} />
+        <View style={[styles.coverPlaceholder, { backgroundColor: currentTheme.background }]}>
+          <Ionicons name="image" size={40} color={currentTheme.text} />
         </View>
       )}
       <View style={styles.detailsContainer}>
-        <Text style={[styles.bookTitle, { color: theme.text }]} numberOfLines={1}>
+        <Text style={[styles.bookTitle, { color: currentTheme.text }]} numberOfLines={1}>
           {item.title}
         </Text>
-        <Text style={[styles.bookAuthor, { color: theme.text }]} numberOfLines={1}>
+        <Text style={[styles.bookAuthor, { color: currentTheme.text }]} numberOfLines={1}>
           by {item.author}
         </Text>
-        <Text style={[styles.bookRating, { color: theme.text }]}>
+        <Text style={[styles.bookRating, { color: currentTheme.text }]}>
           Rating: {item.rating} star{item.rating === 1 ? '' : 's'}
         </Text>
       </View>
@@ -121,22 +138,22 @@ const FavoritesScreen = () => {
 
   if (loading) {
     return (
-      <View style={[styles.loaderContainer, { backgroundColor: theme.background }]}>
-        <ActivityIndicator size="large" color={theme.buttonBackground} />
+      <View style={[styles.loaderContainer, { backgroundColor: currentTheme.background }]}>
+        <ActivityIndicator size="large" color={currentTheme.buttonBackground} />
       </View>
     );
   }
 
   if (favoriteBooks.length === 0) {
     return (
-      <View style={[styles.emptyContainer, { backgroundColor: theme.background }]}>
-        <Text style={[styles.emptyText, { color: theme.text }]}>No favorite books found.</Text>
+      <View style={[styles.emptyContainer, { backgroundColor: currentTheme.background }]}>
+        <Text style={[styles.emptyText, { color: currentTheme.text }]}>No favorite books found.</Text>
       </View>
     );
   }
 
   return (
-    <View style={[styles.outerContainer, { backgroundColor: theme.background }]}>
+    <View style={[styles.outerContainer, { backgroundColor: currentTheme.background }]}>
       <FlatList
         data={favoriteBooks}
         keyExtractor={(item) => item.id.toString()}
@@ -211,9 +228,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 12,
-    backgroundColor: '#F0F0F0',
     borderTopWidth: 1,
-    borderColor: '#EEE',
     borderBottomLeftRadius: 8,
     borderBottomRightRadius: 8,
   },

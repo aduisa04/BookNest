@@ -81,7 +81,7 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
           >
             <AnimatedIcon
               name={iconName}
-              size={28}
+              size={32} // Increased icon size from 28 to 32
               color={isFocused ? '#6A0572' : '#FFFFFF'}
               focused={isFocused}
             />
@@ -97,7 +97,7 @@ export default function MainNavigator() {
     <Tab.Navigator
       screenOptions={{
         headerStyle: {
-          backgroundColor: '#D8BFD8', // Mauve header background
+          backgroundColor: '#C8B6FF', // Mauve header background
         },
         headerTintColor: '#6A0572', // Darker mauve for header text
         tabBarShowLabel: false, // Hide labels for a cleaner look
@@ -122,10 +122,11 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    backgroundColor: '#D8BFD8', // Mauve background for tab bar
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingVertical: 10,
+    backgroundColor: '#C8B6FF', // Mauve background for tab bar
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingVertical: 10, // Increased vertical padding for a larger tab bar
+    height: 60,         // Explicit height added
     paddingHorizontal: 0, // Remove horizontal padding for a flush edge
     // Shadow for iOS
     shadowColor: '#000',

@@ -1,4 +1,3 @@
-// BookNest/src/screens/BookDetailsScreen.jsx
 import React, { useState, useCallback } from 'react';
 import { 
   ScrollView, 
@@ -61,8 +60,15 @@ const BookDetailsScreen = () => {
   }
 
   return (
-    <ScrollView style={[styles.outerContainer, { backgroundColor: currentTheme.background }]} contentContainerStyle={styles.contentContainer}>
-      <Animatable.View animation="fadeInUp" duration={800} style={[styles.card, { backgroundColor: currentTheme.cardBackground }]}>
+    <ScrollView 
+      style={[styles.outerContainer, { backgroundColor: currentTheme.background }]} 
+      contentContainerStyle={styles.contentContainer}
+    >
+      <Animatable.View 
+        animation="fadeInUp" 
+        duration={800} 
+        style={[styles.card, { backgroundColor: currentTheme.cardBackground }]}
+      >
         {book.coverImage ? (
           <Animatable.Image 
             animation="fadeIn" 
@@ -72,14 +78,26 @@ const BookDetailsScreen = () => {
             resizeMode="cover" 
           />
         ) : null}
-        <Animatable.Text animation="fadeIn" duration={800} style={[styles.title, { color: currentTheme.text }]}>
+        <Animatable.Text 
+          animation="fadeIn" 
+          duration={800} 
+          style={[styles.title, { color: currentTheme.text }]}
+        >
           {book.title}
         </Animatable.Text>
-        <Text style={[styles.detail, { color: currentTheme.text }]}>Author: {book.author}</Text>
-        <Text style={[styles.detail, { color: currentTheme.text }]}>Category: {book.category}</Text>
-        <Text style={[styles.detail, { color: currentTheme.text }]}>Status: {book.status}</Text>
+        <Text style={[styles.detail, { color: currentTheme.text }]}>
+          Author: {book.author}
+        </Text>
+        <Text style={[styles.detail, { color: currentTheme.text }]}>
+          Category: {book.category}
+        </Text>
+        <Text style={[styles.detail, { color: currentTheme.text }]}>
+          Status: {book.status}
+        </Text>
         
-        <Text style={[styles.sectionHeader, { color: currentTheme.text }]}>Notes</Text>
+        <Text style={[styles.sectionHeader, { color: currentTheme.text }]}>
+          Notes
+        </Text>
         <Text style={[styles.notes, { color: currentTheme.text }]}>
           {book.notes ? book.notes : 'No notes added yet.'}
         </Text>
@@ -90,7 +108,9 @@ const BookDetailsScreen = () => {
             onPress={() => navigation.navigate('EditBook', { bookId: book.id })}
           >
             <Ionicons name="create-outline" size={24} color={currentTheme.buttonText} />
-            <Text style={[styles.actionButtonText, { color: currentTheme.buttonText }]}>Edit Book</Text>
+            <Text style={[styles.actionButtonText, { color: currentTheme.buttonText }]}>
+              Edit Book
+            </Text>
           </TouchableOpacity>
         </View>
       </Animatable.View>

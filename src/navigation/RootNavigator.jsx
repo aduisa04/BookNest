@@ -1,4 +1,3 @@
-// BookNest/src/navigation/RootNavigator.jsx
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import MainNavigator from './MainNavigator';
@@ -16,8 +15,20 @@ const RootNavigator = () => {
         component={MainNavigator} 
         options={{ headerShown: false }} 
       />
-      <Stack.Screen name="BookDetails" component={BookDetailsScreen} />
-      <Stack.Screen name="EditBook" component={EditBookScreen} />
+      <Stack.Screen 
+        name="BookDetails" 
+        component={BookDetailsScreen}
+        options={{
+          cardStyle: { backgroundColor: "#C8B6FF" },
+        }}
+      />
+      <Stack.Screen 
+        name="EditBook" 
+        component={EditBookScreen}
+        options={{
+          cardStyle: { backgroundColor: "#C8B6FF" },
+        }}
+      />
     </Stack.Navigator>
   );
 };

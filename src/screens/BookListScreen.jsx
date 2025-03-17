@@ -13,8 +13,9 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getDbConnection, deleteBook, toggleFavorite } from '../database/db';
 import CustomAlert from '../context/CustomAlert';
+import { useTheme } from '../context/ThemeContext';
 
-// Define new color scheme
+// Define fallback default colors
 const newColors = {
   primary: "#C8B6FF",       // Mauve
   secondary: "#B8C0FF",     // Periwinkle
@@ -27,6 +28,18 @@ const newColors = {
 
 const BookListScreen = () => {
   const navigation = useNavigation();
+  const { theme } = useTheme();
+  // Create a currentTheme object that uses dynamic theme values or falls back to newColors
+  const currentTheme = {
+    primary: theme.primary || newColors.primary,
+    secondary: theme.secondary || newColors.secondary,
+    text: theme.text || newColors.text,
+    background: theme.background || newColors.background,
+    cardBackground: theme.cardBackground || newColors.cardBackground,
+    buttonBackground: theme.buttonBackground || newColors.buttonBackground,
+    buttonText: theme.buttonText || newColors.buttonText,
+  };
+
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -84,45 +97,49 @@ const BookListScreen = () => {
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
-      style={[styles.bookCard, { backgroundColor: newColors.cardBackground }]}
+      style={[styles.bookCard, { backgroundColor: currentTheme.cardBackground }]}
       onPress={() => navigation.navigate('BookDetails', { bookId: item.id })}
     >
       {item.coverImage ? (
-        <Image source={{ uri: item.coverImage }} style={styles.coverImage} resizeMode="cover" />
+        <Image 
+          source={{ uri: item.coverImage }} 
+          style={styles.coverImage} 
+          resizeMode="cover" 
+        />
       ) : (
-        <View style={[styles.coverPlaceholder, { backgroundColor: newColors.background }]}>
-          <Ionicons name="image" size={40} color={newColors.text} />
+        <View style={[styles.coverPlaceholder, { backgroundColor: currentTheme.background }]}>
+          <Ionicons name="image" size={40} color={currentTheme.text} />
         </View>
       )}
       <View style={styles.detailsContainer}>
-        <Text style={[styles.bookTitle, { color: newColors.text }]} numberOfLines={1}>
+        <Text style={[styles.bookTitle, { color: currentTheme.text }]} numberOfLines={1}>
           {item.title}
         </Text>
-        <Text style={[styles.bookAuthor, { color: newColors.text }]} numberOfLines={1}>
+        <Text style={[styles.bookAuthor, { color: currentTheme.text }]} numberOfLines={1}>
           by {item.author}
         </Text>
       </View>
       <View style={styles.actionsRow}>
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: newColors.secondary }]}
+          style={[styles.actionButton, { backgroundColor: currentTheme.secondary }]}
           onPress={() => navigation.navigate('EditBook', { bookId: item.id })}
         >
-          <Ionicons name="pencil" size={22} color={newColors.buttonText} />
+          <Ionicons name="pencil" size={22} color={currentTheme.buttonText} />
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.actionButton, { backgroundColor: "#FF6B6B" }]}
           onPress={() => handleDeleteBook(item.id)}
         >
-          <Ionicons name="trash" size={22} color={newColors.buttonText} />
+          <Ionicons name="trash" size={22} color={currentTheme.buttonText} />
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: newColors.secondary }]}
+          style={[styles.actionButton, { backgroundColor: currentTheme.secondary }]}
           onPress={() => handleToggleFavorite(item)}
         >
           {item.favorite ? (
             <Ionicons name="heart" size={22} color="#FF3B30" />
           ) : (
-            <Ionicons name="heart-outline" size={22} color={newColors.buttonText} />
+            <Ionicons name="heart-outline" size={22} color={currentTheme.buttonText} />
           )}
         </TouchableOpacity>
       </View>
@@ -131,22 +148,29 @@ const BookListScreen = () => {
 
   if (loading) {
     return (
-      <View style={[styles.loaderContainer, { backgroundColor: newColors.background }]}>
-        <ActivityIndicator size="large" color={newColors.secondary} />
+      <View style={[styles.loaderContainer, { backgroundColor: currentTheme.background }]}>
+        <ActivityIndicator size="large" color={currentTheme.secondary} />
       </View>
     );
   }
 
   return (
-    <View style={[styles.outerContainer, { backgroundColor: newColors.background }]}>
+    <View style={[styles.outerContainer, { backgroundColor: currentTheme.background }]}>
       <View style={styles.searchContainer}>
-        <Ionicons name="search" size={22} color={newColors.text} style={styles.searchIcon} />
+        <Ionicons name="search" size={22} color={currentTheme.text} style={styles.searchIcon} />
         <TextInput 
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholder="Search by title, author, or category"
-          style={[styles.searchInput, { backgroundColor: newColors.background, color: newColors.text, borderColor: newColors.secondary }]}
-          placeholderTextColor={newColors.text}
+          style={[
+            styles.searchInput, 
+            { 
+              backgroundColor: currentTheme.background, 
+              color: currentTheme.text, 
+              borderColor: currentTheme.secondary 
+            }
+          ]}
+          placeholderTextColor={currentTheme.text}
         />
       </View>
       <FlatList

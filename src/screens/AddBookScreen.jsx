@@ -1,4 +1,3 @@
-// BookNest/src/screens/AddBookScreen.jsx
 import React, { useState, useCallback } from 'react';
 import { 
   ScrollView, 
@@ -16,7 +15,7 @@ import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../context/ThemeContext';
 
-// Define the new color scheme
+// Define the default color scheme (fallback for light mode)
 const newColors = {
   primary: "#C8B6FF",    // Mauve – used for borders, selected states, etc.
   secondary: "#B8C0FF",  // Periwinkle – used for buttons and accents
@@ -24,20 +23,30 @@ const newColors = {
   background: "#FFFFFF", // White background
 };
 
-// Custom Alert Component
-const CustomAlert = ({ visible, title, message, onClose }) => (
-  <Modal transparent visible={visible} animationType="fade">
-    <View style={alertStyles.modalBackground}>
-      <View style={[alertStyles.alertContainer, { backgroundColor: newColors.background }]}>
-        <Text style={[alertStyles.alertTitle, { color: newColors.text }]}>{title}</Text>
-        <Text style={[alertStyles.alertMessage, { color: newColors.text }]}>{message}</Text>
-        <TouchableOpacity onPress={onClose} style={[alertStyles.alertButton, { backgroundColor: newColors.secondary }]}>
-          <Text style={alertStyles.alertButtonText}>OK</Text>
-        </TouchableOpacity>
+// Custom Alert Component with dark mode support
+const CustomAlert = ({ visible, title, message, onClose }) => {
+  const { theme } = useTheme();
+  const currentTheme = {
+    background: theme.background || newColors.background,
+    text: theme.text || newColors.text,
+    primary: theme.primary || newColors.primary,
+    secondary: theme.secondary || newColors.secondary,
+  };
+
+  return (
+    <Modal transparent visible={visible} animationType="fade">
+      <View style={alertStyles.modalBackground}>
+        <View style={[alertStyles.alertContainer, { backgroundColor: currentTheme.background }]}>
+          <Text style={[alertStyles.alertTitle, { color: currentTheme.text }]}>{title}</Text>
+          <Text style={[alertStyles.alertMessage, { color: currentTheme.text }]}>{message}</Text>
+          <TouchableOpacity onPress={onClose} style={[alertStyles.alertButton, { backgroundColor: currentTheme.secondary }]}>
+            <Text style={alertStyles.alertButtonText}>OK</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
-  </Modal>
-);
+    </Modal>
+  );
+};
 
 const alertStyles = StyleSheet.create({
   modalBackground: {
@@ -76,6 +85,15 @@ const alertStyles = StyleSheet.create({
 const AddBookScreen = () => {
   const navigation = useNavigation();
   const { theme } = useTheme();
+  // Create a currentTheme object with fallback values
+  const currentTheme = {
+    background: theme.background || newColors.background,
+    text: theme.text || newColors.text,
+    primary: theme.primary || newColors.primary,
+    secondary: theme.secondary || newColors.secondary,
+    inputBackground: theme.inputBackground || newColors.background,
+  };
+
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [categories, setCategories] = useState([]);
@@ -146,13 +164,9 @@ const AddBookScreen = () => {
         allowsEditing: true,
         quality: 0.7,
       });
-      console.log("Image Picker Result:", result);
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const uri = result.assets[0].uri;
-        console.log("Selected Image URI:", uri);
         setCoverImage(uri);
-      } else {
-        console.log("Image selection canceled or no assets found.");
       }
     } catch (error) {
       console.error("Error picking image:", error);
@@ -161,7 +175,6 @@ const AddBookScreen = () => {
   };
 
   const handleAddBook = async () => {
-    console.log("Debugging Add Book:", { title, author, selectedCategory, status, notes, coverImage });
     if (!title || !author || !selectedCategory || !status) {
       showAlert('Error', 'Please fill in all fields.');
       return;
@@ -177,7 +190,6 @@ const AddBookScreen = () => {
         'INSERT INTO books (title, author, category, status, notes, coverImage) VALUES (?, ?, ?, ?, ?, ?)',
         [title, author, selectedCategory, status, notes, coverImage]
       );
-      console.log("Book added successfully");
       showAlert('Success', 'Book added successfully!', () => {
         // Clear form fields and navigate back after dismissal
         setTitle('');
@@ -200,45 +212,45 @@ const AddBookScreen = () => {
 
   return (
     <ScrollView
-      style={[styles.outerContainer, { backgroundColor: newColors.background }]}
+      style={[styles.outerContainer, { backgroundColor: currentTheme.background }]}
       contentContainerStyle={styles.contentContainer}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={[styles.card, { backgroundColor: newColors.background }]}>
-        <Text style={[styles.header, { color: newColors.text }]}>Add New Book</Text>
+      <View style={[styles.card, { backgroundColor: currentTheme.background }]}>
+        <Text style={[styles.header, { color: currentTheme.text }]}>Add New Book</Text>
         <TextInput 
           placeholder="Title" 
           value={title} 
           onChangeText={setTitle} 
-          style={[styles.input, { backgroundColor: theme.inputBackground || newColors.background, color: newColors.text, borderColor: newColors.primary }]} 
-          placeholderTextColor={newColors.text}
+          style={[styles.input, { backgroundColor: currentTheme.inputBackground, color: currentTheme.text, borderColor: currentTheme.primary }]} 
+          placeholderTextColor={currentTheme.text}
         />
         <TextInput 
           placeholder="Author" 
           value={author} 
           onChangeText={setAuthor} 
-          style={[styles.input, { backgroundColor: theme.inputBackground || newColors.background, color: newColors.text, borderColor: newColors.primary }]} 
-          placeholderTextColor={newColors.text}
+          style={[styles.input, { backgroundColor: currentTheme.inputBackground, color: currentTheme.text, borderColor: currentTheme.primary }]} 
+          placeholderTextColor={currentTheme.text}
         />
-        <Text style={[styles.label, { color: newColors.text }]}>Select Status</Text>
-        <View style={[styles.pickerContainer, { backgroundColor: theme.inputBackground || newColors.background, borderColor: newColors.primary }]}>
+        <Text style={[styles.label, { color: currentTheme.text }]}>Select Status</Text>
+        <View style={[styles.pickerContainer, { backgroundColor: currentTheme.inputBackground, borderColor: currentTheme.primary }]}>
           <Picker 
             selectedValue={status} 
             onValueChange={setStatus} 
-            style={[styles.picker, { color: newColors.text }]}
-            itemStyle={{ color: newColors.text }}
+            style={[styles.picker, { color: currentTheme.text }]}
+            itemStyle={{ color: currentTheme.text }}
           >
             <Picker.Item label="Pending" value="Pending" />
             <Picker.Item label="Finished" value="Finished" />
           </Picker>
         </View>
-        <Text style={[styles.label, { color: newColors.text }]}>Select Category</Text>
-        <View style={[styles.pickerContainer, { backgroundColor: theme.inputBackground || newColors.background, borderColor: newColors.primary }]}>
+        <Text style={[styles.label, { color: currentTheme.text }]}>Select Category</Text>
+        <View style={[styles.pickerContainer, { backgroundColor: currentTheme.inputBackground, borderColor: currentTheme.primary }]}>
           <Picker 
             selectedValue={selectedCategory} 
             onValueChange={setSelectedCategory} 
-            style={[styles.picker, { color: newColors.text }]}
-            itemStyle={{ color: newColors.text }}
+            style={[styles.picker, { color: currentTheme.text }]}
+            itemStyle={{ color: currentTheme.text }}
           >
             {categories.length > 0 ? (
               categories.map((category) => (
@@ -253,20 +265,20 @@ const AddBookScreen = () => {
           placeholder="Notes" 
           value={notes} 
           onChangeText={setNotes} 
-          style={[styles.input, styles.notesInput, { backgroundColor: theme.inputBackground || newColors.background, color: newColors.text, borderColor: newColors.primary }]} 
+          style={[styles.input, styles.notesInput, { backgroundColor: currentTheme.inputBackground, color: currentTheme.text, borderColor: currentTheme.primary }]} 
           multiline 
-          placeholderTextColor={newColors.text}
+          placeholderTextColor={currentTheme.text}
         />
-        <TouchableOpacity style={[styles.imageButton, { backgroundColor: newColors.secondary }]} onPress={pickImage}>
-          <Text style={[styles.imageButtonText, { color: newColors.text }]}>
+        <TouchableOpacity style={[styles.imageButton, { backgroundColor: currentTheme.secondary }]} onPress={pickImage}>
+          <Text style={[styles.imageButtonText, { color: currentTheme.text }]}>
             {coverImage ? 'Change Cover Image' : 'Select Cover Image'}
           </Text>
         </TouchableOpacity>
         {coverImage && (
           <Image source={{ uri: coverImage }} style={styles.coverPreview} resizeMode="cover" />
         )}
-        <TouchableOpacity style={[styles.button, { backgroundColor: newColors.secondary }]} onPress={handleAddBook}>
-          <Text style={[styles.buttonText, { color: newColors.text }]}>Add Book</Text>
+        <TouchableOpacity style={[styles.button, { backgroundColor: currentTheme.secondary }]} onPress={handleAddBook}>
+          <Text style={[styles.buttonText, { color: currentTheme.text }]}>Add Book</Text>
         </TouchableOpacity>
       </View>
       <CustomAlert 

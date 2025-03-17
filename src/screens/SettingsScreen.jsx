@@ -14,12 +14,33 @@ Notifications.setNotificationHandler({
   }),
 });
 
+// Fallback defaults
+const newColors = {
+  primary: "#C8B6FF",
+  secondary: "#B8C0FF",
+  text: "#333333",
+  background: "#FFFFFF",
+  cardBackground: "#F8F8F8",
+  buttonBackground: "#B8C0FF",
+  buttonText: "#FFFFFF",
+};
+
 const SettingsScreen = () => {
-  // Get values from your theme context
   const { theme, toggleTheme, isDark } = useTheme();
-  // Change text to black when dark mode is active, otherwise use theme.text
-  const textColor = isDark ? '#000000' : theme.text;
-  
+  // When dark mode is active, use a light grey for text (#D3D3D3) so it remains visible.
+  const currentTheme = {
+    primary: theme.primary || newColors.primary,
+    secondary: theme.secondary || newColors.secondary,
+    text: isDark ? '#D3D3D3' : (theme.text || newColors.text),
+    background: theme.background || newColors.background,
+    cardBackground: theme.cardBackground || newColors.cardBackground,
+    buttonBackground: theme.buttonBackground || newColors.buttonBackground,
+    buttonText: theme.buttonText || newColors.buttonText,
+    border: theme.border || '#ccc',
+    // For the row background, we use a darker shade in dark mode, or a light tone otherwise.
+    rowBackground: theme.rowBackground || (isDark ? '#333333' : '#FFF8F0'),
+  };
+
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   useEffect(() => {
@@ -46,29 +67,29 @@ const SettingsScreen = () => {
   };
 
   return (
-    <ScrollView style={[styles.outerContainer, { backgroundColor: theme.background }]}>
-      <View style={[styles.container, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
-        <Text style={[styles.header, { color: textColor }]}>Settings</Text>
+    <ScrollView style={[styles.outerContainer, { backgroundColor: currentTheme.background }]}>
+      <View style={[styles.container, { backgroundColor: currentTheme.cardBackground, borderColor: currentTheme.border }]}>
+        <Text style={[styles.header, { color: currentTheme.text }]}>Settings</Text>
         {/* Dark Mode Toggle */}
-        <View style={[styles.row, { borderColor: theme.border }]}>
-          <Ionicons name="moon-outline" size={24} color={textColor} />
-          <Text style={[styles.rowText, { color: textColor }]}>Dark Mode</Text>
+        <View style={[styles.row, { borderColor: currentTheme.border, backgroundColor: currentTheme.rowBackground }]}>
+          <Ionicons name="moon-outline" size={24} color={currentTheme.text} />
+          <Text style={[styles.rowText, { color: currentTheme.text }]}>Dark Mode</Text>
           <Switch
             value={isDark}
             onValueChange={toggleTheme}
-            thumbColor={isDark ? theme.buttonBackground : '#CCC'}
-            trackColor={{ true: theme.buttonBackground, false: '#CCC' }}
+            thumbColor={isDark ? currentTheme.buttonBackground : '#CCC'}
+            trackColor={{ true: currentTheme.buttonBackground, false: '#CCC' }}
           />
         </View>
         {/* Notification Toggle */}
-        <View style={[styles.row, { borderColor: theme.border }]}>
-          <Ionicons name="notifications-outline" size={24} color={textColor} />
-          <Text style={[styles.rowText, { color: textColor }]}>Notifications</Text>
+        <View style={[styles.row, { borderColor: currentTheme.border, backgroundColor: currentTheme.rowBackground }]}>
+          <Ionicons name="notifications-outline" size={24} color={currentTheme.text} />
+          <Text style={[styles.rowText, { color: currentTheme.text }]}>Notifications</Text>
           <Switch
             value={notificationsEnabled}
             onValueChange={handleToggleNotifications}
-            thumbColor={notificationsEnabled ? theme.buttonBackground : '#CCC'}
-            trackColor={{ true: theme.buttonBackground, false: '#CCC' }}
+            thumbColor={notificationsEnabled ? currentTheme.buttonBackground : '#CCC'}
+            trackColor={{ true: currentTheme.buttonBackground, false: '#CCC' }}
           />
         </View>
       </View>
@@ -97,7 +118,6 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF8F0',
     padding: 15,
     borderRadius: 12,
     marginBottom: 15,

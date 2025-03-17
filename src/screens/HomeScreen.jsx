@@ -1,4 +1,3 @@
-// BookNest/src/screens/HomeScreen.jsx
 import React, { useState, useCallback } from 'react';
 import { 
   View, 
@@ -90,30 +89,32 @@ const HomeScreen = () => {
   return (
     <>
       {/* StatusBar uses the primary color and dynamic statusBar style */}
-      <StatusBar barStyle={theme.statusBarStyle || "dark-content"} backgroundColor={theme.primary} />
+      <StatusBar barStyle={theme.statusBarStyle || "dark-content"} backgroundColor={theme.primary || "#C8B6FF"} />
       <ScrollView
         style={[styles.outerContainer, { backgroundColor: theme.background }]}
         contentContainerStyle={styles.contentContainer}
         stickyHeaderIndices={[0]}
       >
-        {/* Animated Header with explicit mauve background */}
-        <Animatable.View animation="slideInDown" duration={800} style={[styles.headerContainer, { backgroundColor: "#C8B6FF" }]}>
+        {/* Updated Header with Mauve Background and Curved Bottom */}
+        <Animatable.View 
+          animation="slideInDown" 
+          duration={800} 
+          style={[styles.headerContainer, { backgroundColor: theme.primary || "#C8B6FF" }]}
+        >
           <View style={styles.headerContent}>
             <Image 
               source={require('../../assets/booknest.png')} 
               style={styles.logo} 
               resizeMode="cover" 
             />
-            <Animatable.Text 
-              animation="pulse" 
-              easing="ease-out" 
-              iterationCount="infinite" 
-              style={[styles.headerLabelText, { color: theme.text }]}
-            >
+            <Text style={[styles.headerLabelText, { color: theme.text }]}>
               BOOKNEST
-            </Animatable.Text>
+            </Text>
           </View>
         </Animatable.View>
+  
+        {/* Added extra space before the banners */}
+        <View style={styles.bannerSpacer} />
   
         {/* Animated Banner Scroller */}
         <Animatable.View animation="fadeIn" duration={1000} style={styles.bannerContainer}>
@@ -166,16 +167,17 @@ const HomeScreen = () => {
   
         {/* Reading Calendar Section */}
         <Animatable.View animation="fadeInUp" duration={800} delay={600} style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Reading Calendar</Text>
-          <TouchableOpacity 
-            style={[styles.calendarButton, { backgroundColor: theme.buttonBackground }]}
-            onPress={() => navigation.navigate('BookCalendar')}
-          >
-            <Ionicons name="calendar-outline" size={24} color={theme.text} />
-            <Text style={[styles.calendarButtonText, { color: theme.text }]}>
-              Set Finish Date
-            </Text>
-          </TouchableOpacity>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Book Reading Reminder</Text>
+          <TouchableOpacity
+  style={[styles.calendarButton, { backgroundColor: "#C8B6FF" }]}
+  onPress={() => navigation.navigate('BookCalendar')}
+>
+  <Ionicons name="calendar-outline" size={24} color={theme.text} />
+  <Text style={[styles.calendarButtonText, { color: theme.text }]}>
+    Set A Reminder
+  </Text>
+</TouchableOpacity>
+
         </Animatable.View>
   
       </ScrollView>
@@ -190,35 +192,37 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingBottom: 70,
   },
+  /* Updated Header Styles */
   headerContainer: {
-    paddingTop: 5,  // Extra padding pushes logo/text further down
-    paddingBottom: 20,
+    paddingVertical: 20,
     paddingHorizontal: 20,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 2 },
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
     elevation: 5,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    overflow: 'hidden',
+    zIndex: 1,
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
   },
   logo: {
-    width: 125,
-    height: 90,
-    borderRadius: 45,
-    marginRight: -40,
+    width: 80,
+    height: 50,
+    borderRadius: 25,
+    marginRight: -20,
   },
   headerLabelText: {
-    fontFamily: 'PlayfairDisplay_400Regular',
-    fontSize: 30,
-    textShadowColor: 'rgba(0, 0, 0, 0.25)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 1,
-    marginRight: 20,
+    fontSize: 26,
+    fontWeight: 'bold',
+  },
+  bannerSpacer: {
+    height: 20,  // Extra space below header and above banners
   },
   bannerContainer: {
     marginHorizontal: 20,

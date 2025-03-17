@@ -1,4 +1,3 @@
-// BookNest/src/screens/EditBookScreen.jsx
 import React, { useState, useEffect } from 'react';
 import { 
   ScrollView, 
@@ -17,14 +16,16 @@ import { Picker } from '@react-native-picker/picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 
-// Define new color scheme
+// Fallback default colors with new scheme:
+// - Periwinkle for general backgrounds and headers
+// - Mauve for buttons
 const newColors = {
-  primary: "#C8B6FF",       // Mauve
-  secondary: "#B8C0FF",     // Periwinkle
+  primary: "#B8C0FF",       // Periwinkle for backgrounds and headers
+  secondary: "#C8B6FF",     // Mauve for accents
   text: "#333333",
   background: "#FFFFFF",
   cardBackground: "#F8F8F8",
-  buttonBackground: "#B8C0FF",
+  buttonBackground: "#C8B6FF", // Mauve for buttons
   buttonText: "#FFFFFF",
 };
 
@@ -32,7 +33,20 @@ const EditBookScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { bookId } = route.params;
-  // Override theme values using newColors for this screen.
+  const { theme } = useTheme();
+  
+  // Merge dynamic theme values with fallback defaults.
+  const currentTheme = {
+    primary: theme.primary || newColors.primary,
+    secondary: theme.secondary || newColors.secondary,
+    text: theme.text || newColors.text,
+    background: theme.background || newColors.background,
+    cardBackground: theme.cardBackground || newColors.cardBackground,
+    // For the buttons, we want mauve so we'll explicitly use "#C8B6FF"
+    buttonBackground: "#C8B6FF",
+    buttonText: theme.buttonText || newColors.buttonText,
+  };
+
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [categories, setCategories] = useState([]);
@@ -108,70 +122,76 @@ const EditBookScreen = () => {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: newColors.background }]}>
+    // Set the container background to Periwinkle (currentTheme.primary)
+    <ScrollView 
+      style={[styles.container, { backgroundColor: currentTheme.primary }]}
+      contentContainerStyle={styles.scrollContent}
+    >
       <View style={styles.header}>
-        <Ionicons name="create-outline" size={28} color={newColors.buttonBackground} />
-        <Text style={[styles.headerText, { color: newColors.text }]}>Edit Book</Text>
+        <Ionicons name="create-outline" size={28} color={currentTheme.buttonBackground} />
+        <Text style={[styles.headerText, { color: currentTheme.text }]}>Edit Book</Text>
       </View>
       <TextInput 
         placeholder="Title" 
         value={title} 
         onChangeText={setTitle} 
-        style={[styles.input, { backgroundColor: newColors.background, color: newColors.text, borderColor: newColors.secondary }]} 
-        placeholderTextColor={newColors.text}
+        style={[styles.input, { backgroundColor: currentTheme.background, color: currentTheme.text, borderColor: currentTheme.secondary }]} 
+        placeholderTextColor={currentTheme.text}
       />
       <TextInput 
         placeholder="Author" 
         value={author} 
         onChangeText={setAuthor} 
-        style={[styles.input, { backgroundColor: newColors.background, color: newColors.text, borderColor: newColors.secondary }]} 
-        placeholderTextColor={newColors.text}
+        style={[styles.input, { backgroundColor: currentTheme.background, color: currentTheme.text, borderColor: currentTheme.secondary }]} 
+        placeholderTextColor={currentTheme.text}
       />
-      <Text style={[styles.label, { color: newColors.text }]}>Select Status</Text>
-      <View style={[styles.pickerContainer, { backgroundColor: newColors.background, borderColor: newColors.secondary }]}>
+      <Text style={[styles.label, { color: currentTheme.text }]}>Select Status</Text>
+      <View style={[styles.pickerContainer, { backgroundColor: currentTheme.background, borderColor: currentTheme.secondary }]}>
         <Picker 
           selectedValue={status} 
           onValueChange={setStatus} 
-          style={[styles.picker, { color: newColors.text }]}
-          itemStyle={{ color: newColors.text }}
+          style={[styles.picker, { color: currentTheme.text }]}
+          itemStyle={{ color: currentTheme.text }}
         >
           <Picker.Item label="Pending" value="Pending" />
           <Picker.Item label="Finished" value="Finished" />
         </Picker>
       </View>
-      <Text style={[styles.label, { color: newColors.text }]}>Select Category</Text>
-      <View style={[styles.pickerContainer, { backgroundColor: newColors.background, borderColor: newColors.secondary }]}>
+      <Text style={[styles.label, { color: currentTheme.text }]}>Select Category</Text>
+      <View style={[styles.pickerContainer, { backgroundColor: currentTheme.background, borderColor: currentTheme.secondary }]}>
         <Picker 
           selectedValue={selectedCategory} 
           onValueChange={setSelectedCategory} 
-          style={[styles.picker, { color: newColors.text }]}
-          itemStyle={{ color: newColors.text }}
+          style={[styles.picker, { color: currentTheme.text }]}
+          itemStyle={{ color: currentTheme.text }}
         >
           {categories.map((category) => (
             <Picker.Item key={category.id} label={category.name} value={category.name} />
           ))}
         </Picker>
       </View>
-      <Text style={[styles.label, { color: newColors.text }]}>Notes</Text>
+      <Text style={[styles.label, { color: currentTheme.text }]}>Notes</Text>
       <TextInput
         placeholder="Enter book notes..."
         value={notes}
         onChangeText={setNotes}
-        style={[styles.input, styles.notesInput, { backgroundColor: newColors.background, color: newColors.text, borderColor: newColors.secondary }]}
+        style={[styles.input, styles.notesInput, { backgroundColor: currentTheme.background, color: currentTheme.text, borderColor: currentTheme.secondary }]}
         multiline
-        placeholderTextColor={newColors.text}
+        placeholderTextColor={currentTheme.text}
       />
-      <TouchableOpacity style={[styles.imageButton, { backgroundColor: newColors.buttonBackground }]} onPress={pickImage}>
-        <Text style={[styles.imageButtonText, { color: newColors.buttonText }]}>
+      {/* Change Cover Image button with Mauve background */}
+      <TouchableOpacity style={[styles.imageButton, { backgroundColor: "#C8B6FF" }]} onPress={pickImage}>
+        <Text style={[styles.imageButtonText, { color: currentTheme.buttonText }]}>
           {coverImage ? 'Change Cover Image' : 'Select Cover Image'}
         </Text>
       </TouchableOpacity>
       {coverImage && (
         <Image source={{ uri: coverImage }} style={styles.coverPreview} resizeMode="cover" />
       )}
-      <TouchableOpacity style={[styles.button, { backgroundColor: newColors.buttonBackground }]} onPress={handleUpdateBook}>
-        <Ionicons name="save-outline" size={24} color={newColors.buttonText} />
-        <Text style={[styles.buttonText, { color: newColors.buttonText }]}> Save Changes</Text>
+      {/* Save Changes button with Mauve background */}
+      <TouchableOpacity style={[styles.button, { backgroundColor: "#C8B6FF" }]} onPress={handleUpdateBook}>
+        <Ionicons name="save-outline" size={24} color={currentTheme.buttonText} />
+        <Text style={[styles.buttonText, { color: currentTheme.buttonText }]}> Save Changes</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -181,6 +201,11 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1, 
     padding: 20,
+  },
+  // Added extra padding and spacing for scrollable content
+  scrollContent: {
+    paddingBottom: 40,
+    paddingVertical: 20,
   },
   header: {
     flexDirection: 'row',
