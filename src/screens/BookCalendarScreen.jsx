@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { 
   View,
   Text,
@@ -19,7 +19,7 @@ import * as Notifications from 'expo-notifications';
 import { getBooksFromDatabase, addBook, deleteBook, updateBookDeadline } from '../database/db';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 
 // Default color scheme (fallback for light mode)
 const newColors = {
@@ -29,7 +29,6 @@ const newColors = {
   background: "#F3F0FF",
 };
 
-// Dark purple for buttons (if needed)
 const darkPurple = "#4B0082";
 
 // Check if notifications are enabled.
@@ -196,6 +195,31 @@ function BookCalendarScreen() {
   useEffect(() => {
     fetchBooks();
   }, []);
+
+  // NEW: Reschedule reminders on screen focus so that if notifications were turned on after adding a book,
+  // all pending deadlines will be scheduled.
+  useFocusEffect(
+    useCallback(() => {
+      const scheduleAllReminders = async () => {
+        const enabled = await areNotificationsEnabled();
+        if (!enabled) return;
+        // Directly fetch books from the database so that we have the latest data.
+        const dbBooks = await getBooksFromDatabase();
+        const now = new Date();
+        await Notifications.cancelAllScheduledNotificationsAsync();
+        dbBooks.forEach(async (book) => {
+          if (book.dueDate) {
+            const dueDate = new Date(book.dueDate);
+            if (dueDate.getTime() > now.getTime()) {
+              await scheduleDeadlineNotification(book.title, dueDate);
+            }
+          }
+        });
+        console.log("All reminders have been rescheduled on focus.");
+      };
+      scheduleAllReminders();
+    }, [])
+  );
 
   // Combine selectedDate (YYYY-MM-DD) and newBookTime into one Date.
   const getCombinedDueDate = () => {
@@ -433,6 +457,7 @@ function BookCalendarScreen() {
               </View>
             </Animatable.View>
           )}
+          contentContainerStyle={[styles.listContainer, { marginTop: 20, flexGrow: 1, paddingBottom: 120 }]}
         />
       )}
 
@@ -625,8 +650,8 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
     elevation: 5,
     overflow: 'hidden',
