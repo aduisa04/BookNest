@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Switch, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Switch, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { rescheduleNotifications } from '../rescheduleNotifications';
 import { useTheme } from '../context/ThemeContext';
+import { useNavigation } from '@react-navigation/native';
 
+// Set Notification Handler
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -14,84 +15,93 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// Fallback defaults
-const newColors = {
-  primary: "#C8B6FF",
-  secondary: "#B8C0FF",
-  text: "#333333",
-  background: "#FFFFFF",
-  cardBackground: "#F8F8F8",
-  buttonBackground: "#B8C0FF",
-  buttonText: "#FFFFFF",
-};
-
 const SettingsScreen = () => {
   const { theme, toggleTheme, isDark } = useTheme();
-  // When dark mode is active, use a light grey for text (#D3D3D3) so it remains visible.
-  const currentTheme = {
-    primary: theme.primary || newColors.primary,
-    secondary: theme.secondary || newColors.secondary,
-    text: isDark ? '#D3D3D3' : (theme.text || newColors.text),
-    background: theme.background || newColors.background,
-    cardBackground: theme.cardBackground || newColors.cardBackground,
-    buttonBackground: theme.buttonBackground || newColors.buttonBackground,
-    buttonText: theme.buttonText || newColors.buttonText,
-    border: theme.border || '#ccc',
-    // For the row background, we use a darker shade in dark mode, or a light tone otherwise.
-    rowBackground: theme.rowBackground || (isDark ? '#333333' : '#FFF8F0'),
-  };
+  const navigation = useNavigation();
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
+  // Load notification setting from AsyncStorage
   useEffect(() => {
-    const loadNotificationSetting = async () => {
+    const loadSettings = async () => {
       try {
-        const value = await AsyncStorage.getItem('notificationsEnabled');
-        setNotificationsEnabled(value === 'true');
+        const notifValue = await AsyncStorage.getItem('notificationsEnabled');
+        setNotificationsEnabled(notifValue === 'true');
       } catch (error) {
-        console.error("Error loading notifications setting:", error);
+        console.error("Error loading settings:", error);
       }
     };
-    loadNotificationSetting();
+    loadSettings();
   }, []);
 
+  // Toggle notifications and schedule a test notification
   const handleToggleNotifications = async (value) => {
     setNotificationsEnabled(value);
     await AsyncStorage.setItem('notificationsEnabled', value ? 'true' : 'false');
+
     if (!value) {
       await Notifications.cancelAllScheduledNotificationsAsync();
-      console.log("Notifications have been turned off. All scheduled notifications cancelled.");
+      console.log("Notifications have been turned off.");
     } else {
-      await rescheduleNotifications();
+      await scheduleNotification();
     }
   };
 
+  // Schedule a test notification with the default sound
+  const scheduleNotification = async () => {
+    // Cancel any existing notifications
+    await Notifications.cancelAllScheduledNotificationsAsync();
+
+    let channelId = 'default';
+    if (Platform.OS === 'android') {
+      // For Android, create (or update) a notification channel using the default sound.
+      await Notifications.setNotificationChannelAsync(channelId, {
+        name: 'Default Channel',
+        importance: Notifications.AndroidImportance.DEFAULT,
+        sound: 'default',
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#FF231F7C',
+      });
+    }
+
+    // Schedule the test notification (triggers after 5 seconds)
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Study Reminder",
+        body: "Time to focus on your tasks!",
+        sound: 'default',
+        ...(Platform.OS === 'android' && { channelId }),
+      },
+      trigger: { seconds: 5 },
+    });
+
+    console.log("Notification scheduled with default sound.");
+  };
+
   return (
-    <ScrollView style={[styles.outerContainer, { backgroundColor: currentTheme.background }]}>
-      <View style={[styles.container, { backgroundColor: currentTheme.cardBackground, borderColor: currentTheme.border }]}>
-        <Text style={[styles.header, { color: currentTheme.text }]}>Settings</Text>
+    <ScrollView style={[styles.outerContainer, { backgroundColor: theme.background }]}>
+      <View style={[styles.container, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+        <Text style={[styles.header, { color: theme.text }]}>Settings</Text>
+
         {/* Dark Mode Toggle */}
-        <View style={[styles.row, { borderColor: currentTheme.border, backgroundColor: currentTheme.rowBackground }]}>
-          <Ionicons name="moon-outline" size={24} color={currentTheme.text} />
-          <Text style={[styles.rowText, { color: currentTheme.text }]}>Dark Mode</Text>
-          <Switch
-            value={isDark}
-            onValueChange={toggleTheme}
-            thumbColor={isDark ? currentTheme.buttonBackground : '#CCC'}
-            trackColor={{ true: currentTheme.buttonBackground, false: '#CCC' }}
-          />
+        <View style={[styles.row, { borderColor: theme.border }]}>
+          <Ionicons name="moon-outline" size={24} color={theme.text} />
+          <Text style={[styles.rowText, { color: theme.text }]}>Dark Mode</Text>
+          <Switch value={isDark} onValueChange={toggleTheme} />
         </View>
-        {/* Notification Toggle */}
-        <View style={[styles.row, { borderColor: currentTheme.border, backgroundColor: currentTheme.rowBackground }]}>
-          <Ionicons name="notifications-outline" size={24} color={currentTheme.text} />
-          <Text style={[styles.rowText, { color: currentTheme.text }]}>Notifications</Text>
-          <Switch
-            value={notificationsEnabled}
-            onValueChange={handleToggleNotifications}
-            thumbColor={notificationsEnabled ? currentTheme.buttonBackground : '#CCC'}
-            trackColor={{ true: currentTheme.buttonBackground, false: '#CCC' }}
-          />
+
+        {/* Notifications Toggle */}
+        <View style={[styles.row, { borderColor: theme.border }]}>
+          <Ionicons name="notifications-outline" size={24} color={theme.text} />
+          <Text style={[styles.rowText, { color: theme.text }]}>Notifications</Text>
+          <Switch value={notificationsEnabled} onValueChange={handleToggleNotifications} />
         </View>
+
+        {/* About Us Row */}
+        <TouchableOpacity onPress={() => navigation.navigate('AboutUs')} style={[styles.row, { borderColor: theme.border }]}>
+          <Ionicons name="information-circle-outline" size={24} color={theme.text} />
+          <Text style={[styles.rowText, { color: theme.text }]}>About Us</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -104,6 +114,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 16,
     borderWidth: 1,
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOpacity: 0.15,
     shadowOffset: { width: 0, height: 3 },

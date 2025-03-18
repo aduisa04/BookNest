@@ -8,6 +8,7 @@ import FavoritesScreen from '../screens/FavoritesScreen';
 import CategoriesScreen from '../screens/AddCategoryScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import BookCalendarScreen from '../screens/BookCalendarScreen';
+
 import { Ionicons } from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable';
 
@@ -110,7 +111,7 @@ export default function MainNavigator() {
       <Tab.Screen name="Add Book" component={AddBookScreen} options={{ headerTitle: 'Add Book' }} />
       <Tab.Screen name="Favorites" component={FavoritesScreen} options={{ headerTitle: 'Favorites' }} />
       <Tab.Screen name="Categories" component={CategoriesScreen} options={{ headerTitle: 'Categories' }} />
-      <Tab.Screen name="Settings" component={SettingsScreen} options={{ headerTitle: 'Settings' }} />
+      <Tab.Screen name="Settings" component={SettingsScreen} options={{ headerTitle: '' }} />
     </Tab.Navigator>
   );
 }

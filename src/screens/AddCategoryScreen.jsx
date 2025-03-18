@@ -1,4 +1,3 @@
-// BookNest/src/screens/AddCategoryScreen.jsx
 import React, { useState, useEffect } from 'react';
 import { 
   View, 
@@ -13,11 +12,11 @@ import { addCategory, getCategories, deleteCategory } from '../database/db';
 import { useTheme } from '../context/ThemeContext';
 import * as Animatable from 'react-native-animatable';
 
-// Define default color scheme (used as fallback)
+// Default color scheme (fallback)
 const newColors = {
-  primary: "#C8B6FF",    // Mauve (used for header background)
-  secondary: "#B8C0FF",  // Periwinkle (used for buttons and accents)
-  text: "#333333",       // Dark text for contrast
+  primary: "#C8B6FF",    // Mauve (header background)
+  secondary: "#B8C0FF",  // Periwinkle (buttons and accents)
+  text: "#333333",       // Dark text
   background: "#FFFFFF", // White background
 };
 
@@ -71,12 +70,12 @@ const alertStyles = StyleSheet.create({
   },
   alertContainer: {
     width: '80%',
-    borderRadius: 8,
-    padding: 20,
+    borderRadius: 12,
+    padding: 25,
     alignItems: 'center',
   },
   alertTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 10,
   },
@@ -86,9 +85,9 @@ const alertStyles = StyleSheet.create({
     textAlign: 'center',
   },
   alertButton: {
-    borderRadius: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    borderRadius: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 30,
   },
   alertButtonText: {
     color: '#fff',
@@ -103,7 +102,6 @@ const alertStyles = StyleSheet.create({
 
 const AddCategoryScreen = () => {
   const { theme } = useTheme();
-  // Use dynamic theme values with fallback to newColors
   const currentTheme = {
     background: theme.background || newColors.background,
     text: theme.text || newColors.text,
@@ -224,10 +222,7 @@ const AddCategoryScreen = () => {
         placeholder="Enter Category Name"
         value={categoryName}
         onChangeText={setCategoryName}
-        style={[
-          styles.input,
-          { backgroundColor: currentTheme.inputBackground, color: currentTheme.text, borderColor: newColors.primary }
-        ]}
+        style={[styles.input, { backgroundColor: currentTheme.inputBackground, color: currentTheme.text, borderColor: newColors.primary }]}
         placeholderTextColor={currentTheme.text}
       />
       <TouchableOpacity style={[styles.button, { backgroundColor: newColors.secondary }]} onPress={handleAddCategory}>
@@ -259,42 +254,53 @@ const AddCategoryScreen = () => {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    padding: 20 
+    padding: 20,
+    backgroundColor: newColors.background,
   },
   headerContainer: {
-    paddingVertical: 15,
+    paddingVertical: 20,
     alignItems: 'center',
-    marginBottom: 20,
-    borderRadius: 10,
+    marginBottom: 25,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
   },
   headerText: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: 'bold',
   },
   input: { 
     borderWidth: 1, 
-    padding: 10, 
-    marginBottom: 10, 
-    borderRadius: 5, 
-    fontSize: 16 
+    padding: 12, 
+    marginBottom: 15, 
+    borderRadius: 8, 
+    fontSize: 16,
   },
   listContainer: {
-    marginTop: 20,
+    marginTop: 25,
   },
   categoryItemContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 10,
-    marginBottom: 5,
-    borderRadius: 5,
+    padding: 15,
+    marginBottom: 10,
+    borderRadius: 8,
+    backgroundColor: newColors.background,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 3,
   },
   categoryItem: { 
     fontSize: 18,
   },
   deleteButton: {
-    padding: 5,
-    borderRadius: 5,
+    padding: 8,
+    borderRadius: 6,
   },
   deleteButtonText: {
     fontSize: 16,
@@ -302,11 +308,11 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: newColors.secondary,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 25,
     borderRadius: 30,
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 15,
   },
   buttonText: {
     fontSize: 16,

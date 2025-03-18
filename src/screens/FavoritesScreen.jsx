@@ -14,10 +14,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { getDbConnection, updateBookRating } from '../database/db';
 import { useTheme } from '../context/ThemeContext';
 
-// Fallback default colors
 const newColors = {
-  primary: "#C8B6FF",
-  secondary: "#B8C0FF",
+  primary: "#C8B6FF", // Periwinkle
+  secondary: "#B8C0FF", // Mauve-ish
   text: "#333333",
   background: "#FFFFFF",
   cardBackground: "#F8F8F8",
@@ -27,27 +26,47 @@ const newColors = {
 
 const AnimatedStar = ({ filled, onPress }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const rotationAnim = useRef(new Animated.Value(0)).current;
   
   const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1.2,
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.spring(scaleAnim, {
+        toValue: 1.2,
+        useNativeDriver: true,
+      }),
+      Animated.timing(rotationAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      })
+    ]).start();
   };
 
   const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      friction: 3,
-      tension: 40,
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 3,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+      Animated.timing(rotationAnim, {
+        toValue: 0,
+        duration: 100,
+        useNativeDriver: true,
+      })
+    ]).start();
     onPress();
   };
 
   return (
     <TouchableOpacity onPressIn={handlePressIn} onPressOut={handlePressOut} activeOpacity={0.7}>
-      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <Animated.View style={{ 
+        transform: [
+          { scale: scaleAnim },
+          { rotate: rotationAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '15deg'] }) }
+        ]
+      }}>
         <Ionicons
           name={filled ? "star" : "star-outline"}
           size={32}
@@ -61,7 +80,6 @@ const AnimatedStar = ({ filled, onPress }) => {
 
 const FavoritesScreen = () => {
   const { theme } = useTheme();
-  // Merge dynamic theme values with fallback defaults.
   const currentTheme = {
     primary: theme.primary || newColors.primary,
     secondary: theme.secondary || newColors.secondary,
@@ -97,18 +115,32 @@ const FavoritesScreen = () => {
     await updateBookRating(bookId, rating, refreshFavorites);
   };
 
+  // Fun rating feedback based on current rating.
+  const getRatingFeedback = (rating) => {
+    if (rating === 0) return "Tap a star to rate!";
+    if (rating === 1) return "Ouch, that's low!";
+    if (rating === 2) return "Could be better!";
+    if (rating === 3) return "Average rating!";
+    if (rating === 4) return "Great!";
+    if (rating === 5) return "Excellent!";
+    return "";
+  };
+
+  // Updated renderStars: stars are grouped in a new 'starsRow' view
   const renderStars = (book) => (
-    <View style={[styles.starContainer, { 
-      backgroundColor: currentTheme.cardBackground, 
-      borderColor: currentTheme.secondary 
-    }]}>
-      {[1, 2, 3, 4, 5].map((star) => (
-        <AnimatedStar
-          key={star}
-          filled={star <= book.rating}
-          onPress={() => handleRating(book.id, book.rating === star ? 0 : star)}
-        />
-      ))}
+    <View style={[styles.starContainer, { backgroundColor: currentTheme.cardBackground, borderColor: currentTheme.secondary }]}>
+      <View style={styles.starsRow}>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <AnimatedStar
+            key={star}
+            filled={star <= book.rating}
+            onPress={() => handleRating(book.id, book.rating === star ? 0 : star)}
+          />
+        ))}
+      </View>
+      <Animated.Text animation="bounceIn" style={[styles.ratingFeedback, { color: currentTheme.text }]}>
+        {getRatingFeedback(book.rating)}
+      </Animated.Text>
     </View>
   );
 
@@ -224,13 +256,45 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   starContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
     paddingVertical: 12,
     borderTopWidth: 1,
     borderBottomLeftRadius: 8,
     borderBottomRightRadius: 8,
+  },
+  starsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  ratingFeedback: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginTop: 5,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 5,
+  },
+  deleteButton: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  finishedButton: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+  },
+  finishedButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });
 

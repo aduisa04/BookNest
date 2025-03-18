@@ -17,10 +17,6 @@ export const getDbConnection = async () => {
   }
 };
 
-// Note: The async connection is expected to provide methods like execAsync, runAsync, getAllAsync.
-// If these are already available on the returned dbInstance, you can use them directly.
-// (If not, you may need to ensure you are using the correct version of expo-sqlite or its async wrapper.)
-
 // Setup Database: Create tables if they don't exist.
 export const setupDatabase = async () => {
   const db = await getDbConnection();
@@ -168,5 +164,18 @@ export const updateBookRating = async (bookId, rating, refreshBooks) => {
     }
   } catch (error) {
     console.error('❌ Error updating rating:', error);
+  }
+};
+
+// Update Book Deadline: Updates the dueDate (deadline) for a book.
+// This updates both the date and time.
+export const updateBookDeadline = async (bookId, newDeadline) => {
+  const db = await getDbConnection();
+  if (!db) return;
+  try {
+    await db.runAsync('UPDATE books SET dueDate = ? WHERE id = ?;', [newDeadline, bookId]);
+    console.log(`✅ Updated deadline for book ${bookId} to ${newDeadline}`);
+  } catch (error) {
+    console.error('❌ Error updating deadline:', error);
   }
 };
