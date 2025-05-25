@@ -1,4 +1,6 @@
-import React, { useState, useCallback } from 'react';
+// AddBookScreen.jsx
+
+import React, { useState } from 'react';
 import { 
   ScrollView, 
   TextInput, 
@@ -13,14 +15,15 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { getCategories, getDbConnection } from '../database/db';
 import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
+import { MediaTypeOptions, PermissionStatus } from 'expo-image-picker';
 import { useTheme } from '../context/ThemeContext';
 
 // Define the default color scheme (fallback for light mode)
 const newColors = {
-  primary: "#C8B6FF",    // Mauve – used for borders, selected states, etc.
-  secondary: "#B8C0FF",  // Periwinkle – used for buttons and accents
-  text: "#333333",       // Dark text for contrast
-  background: "#FFFFFF", // White background
+  primary: "#C8B6FF",
+  secondary: "#B8C0FF",
+  text: "#333333",
+  background: "#FFFFFF",
 };
 
 // Custom Alert Component with dark mode support
@@ -85,7 +88,6 @@ const alertStyles = StyleSheet.create({
 const AddBookScreen = () => {
   const navigation = useNavigation();
   const { theme } = useTheme();
-  // Create a currentTheme object with fallback values
   const currentTheme = {
     background: theme.background || newColors.background,
     text: theme.text || newColors.text,
@@ -98,17 +100,18 @@ const AddBookScreen = () => {
   const [author, setAuthor] = useState('');
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [status, setStatus] = useState('Pending');
-  const [notes, setNotes] = useState('');
+  const [status, setStatus] = useState('To Read');
+  const [description, setDescription] = useState('');
+  const [totalPages, setTotalPages] = useState('');
+  const [progressMode, setProgressMode] = useState('pages');
   const [coverImage, setCoverImage] = useState(null);
 
-  // State for custom alert
+  // Custom alert state
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertTitle, setAlertTitle] = useState('');
   const [alertMessage, setAlertMessage] = useState('');
   const [alertCallback, setAlertCallback] = useState(null);
 
-  // Helper to show custom alert
   const showAlert = (title, message, callback = null) => {
     setAlertTitle(title);
     setAlertMessage(message);
@@ -116,7 +119,6 @@ const AddBookScreen = () => {
     setAlertVisible(true);
   };
 
-  // Dismiss alert and run callback if provided.
   const handleCloseAlert = () => {
     setAlertVisible(false);
     if (alertCallback) {
@@ -125,87 +127,73 @@ const AddBookScreen = () => {
     }
   };
 
-  // Fetch categories and reset form fields when the screen gains focus.
+  // Fetch categories & reset form on focus
   useFocusEffect(
-    useCallback(() => {
-      const initialize = async () => {
+    React.useCallback(() => {
+      let active = true;
+      async function initialize() {
         try {
           const data = await getCategories();
+          if (!active) return;
           setCategories(data);
-          if (data.length > 0) {
-            setSelectedCategory(data[0].name);
-          } else {
-            setSelectedCategory('');
-          }
-        } catch (error) {
-          console.error('Error fetching categories:', error);
+          setSelectedCategory(data[0]?.name || '');
+          setTitle('');
+          setAuthor('');
+          setDescription('');
+          setTotalPages('');
+          setProgressMode('pages');
+          setStatus('To Read');
+          setCoverImage(null);
+        } catch (e) {
+          console.error(e);
         }
-        // Reset form fields
-        setTitle('');
-        setAuthor('');
-        setNotes('');
-        setStatus('Pending');
-        setCoverImage(null);
-      };
+      }
       initialize();
+      return () => { active = false; };
     }, [])
   );
 
-  // Launch image picker using updated API
   const pickImage = async () => {
-    try {
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permissionResult.granted) {
-        showAlert("Permission required", "Permission to access the gallery is required!");
-        return;
-      }
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images, 
-        allowsEditing: true,
-        quality: 0.7,
-      });
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const uri = result.assets[0].uri;
-        setCoverImage(uri);
-      }
-    } catch (error) {
-      console.error("Error picking image:", error);
-      showAlert("Error", "An error occurred while picking the image.");
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (perm.status !== PermissionStatus.GRANTED) {
+      return showAlert("Permission required", "Permission to access the gallery is required!");
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets?.length > 0) {
+      setCoverImage(result.assets[0].uri);
     }
   };
 
   const handleAddBook = async () => {
-    if (!title || !author || !selectedCategory || !status) {
-      showAlert('Error', 'Please fill in all fields.');
-      return;
+    if (!title || !author || !selectedCategory || !status || !totalPages) {
+      return showAlert('Error', 'Please fill in all fields.');
     }
     try {
       const db = await getDbConnection();
-      if (!db) {
-        showAlert('Error', 'Database connection failed.');
-        return;
-      }
-      // Insert the new book record including the coverImage URI
       await db.runAsync(
-        'INSERT INTO books (title, author, category, status, notes, coverImage) VALUES (?, ?, ?, ?, ?, ?)',
-        [title, author, selectedCategory, status, notes, coverImage]
+        `INSERT INTO books 
+           (title, author, category, status, description, coverImage, totalPages, progressMode) 
+         VALUES (?,?,?,?,?,?,?,?);`,
+        [
+          title,
+          author,
+          selectedCategory,
+          status,
+          description,
+          coverImage,
+          parseInt(totalPages, 10),
+          progressMode
+        ]
       );
       showAlert('Success', 'Book added successfully!', () => {
-        // Clear form fields and navigate back after dismissal
-        setTitle('');
-        setAuthor('');
-        setNotes('');
-        setStatus('Pending');
-        if (categories.length > 0) {
-          setSelectedCategory(categories[0].name);
-        } else {
-          setSelectedCategory('');
-        }
-        setCoverImage(null);
         navigation.goBack();
       });
     } catch (error) {
-      console.error("Error adding book:", error);
+      console.error(error);
       showAlert('Error', 'Failed to add book.');
     }
   };
@@ -218,58 +206,95 @@ const AddBookScreen = () => {
     >
       <View style={[styles.card, { backgroundColor: currentTheme.background }]}>
         <Text style={[styles.header, { color: currentTheme.text }]}>Add New Book</Text>
+
         <TextInput 
-          placeholder="Title" 
-          value={title} 
-          onChangeText={setTitle} 
-          style={[styles.input, { backgroundColor: currentTheme.inputBackground, color: currentTheme.text, borderColor: currentTheme.primary }]} 
+          placeholder="Title"
+          value={title}
+          onChangeText={setTitle}
+          style={[styles.input, {
+            backgroundColor: currentTheme.inputBackground,
+            color: currentTheme.text,
+            borderColor: currentTheme.primary
+          }]}
           placeholderTextColor={currentTheme.text}
         />
+
         <TextInput 
-          placeholder="Author" 
-          value={author} 
-          onChangeText={setAuthor} 
-          style={[styles.input, { backgroundColor: currentTheme.inputBackground, color: currentTheme.text, borderColor: currentTheme.primary }]} 
+          placeholder="Author"
+          value={author}
+          onChangeText={setAuthor}
+          style={[styles.input, {
+            backgroundColor: currentTheme.inputBackground,
+            color: currentTheme.text,
+            borderColor: currentTheme.primary
+          }]}
           placeholderTextColor={currentTheme.text}
         />
-        <Text style={[styles.label, { color: currentTheme.text }]}>Select Status</Text>
-        <View style={[styles.pickerContainer, { backgroundColor: currentTheme.inputBackground, borderColor: currentTheme.primary }]}>
-          <Picker 
-            selectedValue={status} 
-            onValueChange={setStatus} 
+
+        <Text style={[styles.label, { color: currentTheme.text }]}>Total Pages</Text>
+        <TextInput
+          placeholder="e.g. 320"
+          value={totalPages}
+          onChangeText={setTotalPages}
+          keyboardType="numeric"
+          style={[styles.input, {
+            backgroundColor: currentTheme.inputBackground,
+            color: currentTheme.text,
+            borderColor: currentTheme.primary
+          }]}
+          placeholderTextColor={currentTheme.text}
+        />
+
+        <Text style={[styles.label, { color: currentTheme.text }]}>Record Progress By</Text>
+        <View style={[styles.pickerContainer, {
+          backgroundColor: currentTheme.inputBackground,
+          borderColor: currentTheme.primary
+        }]}>
+          <Picker
+            selectedValue={progressMode}
+            onValueChange={setProgressMode}
             style={[styles.picker, { color: currentTheme.text }]}
-            itemStyle={{ color: currentTheme.text }}
           >
-            <Picker.Item label="Pending" value="Pending" />
-            <Picker.Item label="Finished" value="Finished" />
+            <Picker.Item label="By Pages" value="pages" />
+            <Picker.Item label="By Percentage" value="percentage" />
           </Picker>
         </View>
-        <Text style={[styles.label, { color: currentTheme.text }]}>Select Category</Text>
-        <View style={[styles.pickerContainer, { backgroundColor: currentTheme.inputBackground, borderColor: currentTheme.primary }]}>
-          <Picker 
-            selectedValue={selectedCategory} 
-            onValueChange={setSelectedCategory} 
+
+        <Text style={[styles.label, { color: currentTheme.text }]}>Status</Text>
+        <View style={[styles.pickerContainer, {
+          backgroundColor: currentTheme.inputBackground,
+          borderColor: currentTheme.primary
+        }]}>
+          <Picker
+            selectedValue={status}
+            onValueChange={setStatus}
             style={[styles.picker, { color: currentTheme.text }]}
-            itemStyle={{ color: currentTheme.text }}
           >
-            {categories.length > 0 ? (
-              categories.map((category) => (
-                <Picker.Item key={category.id} label={category.name} value={category.name} />
-              ))
-            ) : (
-              <Picker.Item label="No Categories Available" value="" />
-            )}
+            <Picker.Item label="To Read" value="To Read" />
+            <Picker.Item label="Reading" value="Reading" />
+            <Picker.Item label="I’ve Read It All" value="I’ve Read It All" />
+            <Picker.Item label="Gave Up" value="Gave Up" />
           </Picker>
         </View>
-        <TextInput 
-          placeholder="Notes" 
-          value={notes} 
-          onChangeText={setNotes} 
-          style={[styles.input, styles.notesInput, { backgroundColor: currentTheme.inputBackground, color: currentTheme.text, borderColor: currentTheme.primary }]} 
-          multiline 
+
+        <Text style={[styles.label, { color: currentTheme.text }]}>Description</Text>
+        <TextInput
+          placeholder="Description…"
+          value={description}
+          onChangeText={setDescription}
+          multiline
+          style={[styles.input, styles.notesInput, {
+            backgroundColor: currentTheme.inputBackground,
+            color: currentTheme.text,
+            borderColor: currentTheme.primary
+          }]}
           placeholderTextColor={currentTheme.text}
         />
-        <TouchableOpacity style={[styles.imageButton, { backgroundColor: currentTheme.secondary }]} onPress={pickImage}>
+
+        <TouchableOpacity
+          style={[styles.imageButton, { backgroundColor: currentTheme.secondary }]}
+          onPress={pickImage}
+        >
           <Text style={[styles.imageButtonText, { color: currentTheme.text }]}>
             {coverImage ? 'Change Cover Image' : 'Select Cover Image'}
           </Text>
@@ -277,10 +302,15 @@ const AddBookScreen = () => {
         {coverImage && (
           <Image source={{ uri: coverImage }} style={styles.coverPreview} resizeMode="cover" />
         )}
-        <TouchableOpacity style={[styles.button, { backgroundColor: currentTheme.secondary }]} onPress={handleAddBook}>
+
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: currentTheme.secondary }]}
+          onPress={handleAddBook}
+        >
           <Text style={[styles.buttonText, { color: currentTheme.text }]}>Add Book</Text>
         </TouchableOpacity>
       </View>
+
       <CustomAlert 
         visible={alertVisible}
         title={alertTitle}
@@ -292,12 +322,8 @@ const AddBookScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  outerContainer: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: 20,
-  },
+  outerContainer: { flex: 1 },
+  contentContainer: { padding: 20 },
   card: {
     borderRadius: 16,
     padding: 20,
@@ -306,12 +332,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 4,
   },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
+  header: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
   input: {
     borderWidth: 1,
     padding: 12,
@@ -319,24 +340,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     fontSize: 16,
   },
-  notesInput: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
-  label: {
-    fontWeight: 'bold',
-    marginBottom: 5,
-    fontSize: 16,
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 15,
-    overflow: 'hidden',
-  },
-  picker: {
-    height: 50,
-  },
+  notesInput: { height: 100, textAlignVertical: 'top' },
+  label: { fontWeight: 'bold', marginBottom: 5, fontSize: 16 },
+  pickerContainer: { borderWidth: 1, borderRadius: 8, marginBottom: 15, overflow: 'hidden' },
+  picker: { height: 50 },
   imageButton: {
     paddingVertical: 10,
     paddingHorizontal: 20,
@@ -344,16 +351,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     alignItems: 'center',
   },
-  imageButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  coverPreview: {
-    width: '100%',
-    height: 200,
-    borderRadius: 10,
-    marginBottom: 15,
-  },
+  imageButtonText: { fontSize: 16, fontWeight: 'bold' },
+  coverPreview: { width: '100%', height: 200, borderRadius: 10, marginBottom: 15 },
   button: {
     paddingVertical: 14,
     paddingHorizontal: 20,
@@ -361,10 +360,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     alignItems: 'center',
   },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  buttonText: { fontSize: 16, fontWeight: 'bold' },
 });
 
 export default AddBookScreen;

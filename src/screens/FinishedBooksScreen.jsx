@@ -1,6 +1,4 @@
-// src/screens/BookListScreen.jsx
-
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,58 +7,23 @@ import {
   StyleSheet,
   ActivityIndicator,
   Image,
-  TextInput,
-  Animated
+  TextInput
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import {
   getDbConnection,
+  getLatestProgress,
   deleteBook,
-  toggleFavorite,
-  getLatestProgress
+  toggleFavorite
 } from '../database/db';
-import CustomAlert from '../context/CustomAlert';
 import { useTheme } from '../context/ThemeContext';
+import CustomAlert from '../context/CustomAlert';
 
-// New ProgressBar Component
-const BookProgressBar = ({ pct, theme }) => {
-  const animatedProgress = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (pct > 0) {
-      Animated.timing(animatedProgress, {
-        toValue: pct,
-        duration: 500,
-        useNativeDriver: false,
-      }).start();
-    }
-  }, [pct]);
-
-  return (
-    <View style={styles.progressRow}> {/* Removed layout styles from here */}
-      <Animated.View
-        style={[
-          styles.barBg,
-          { 
-            width: animatedProgress.interpolate({
-              inputRange: [0, 100],
-              outputRange: ['0%', '100%'],
-            }),
-            backgroundColor: pct > 0 ? theme.secondary : 'transparent'
-          }
-        ]}
-      />
-      <Text style={[styles.barText,{ color: theme.text }]}>{pct}%</Text>
-    </View>
-  );
-};
-
-const BookListScreen = () => {
+const FinishedBooksScreen = () => {
   const navigation = useNavigation();
   const { theme } = useTheme();
   const [books, setBooks] = useState([]);
-  const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [alert, setAlert] = useState({ visible:false, id:null });
@@ -71,7 +34,7 @@ const BookListScreen = () => {
       let active = true;
       async function load() {
         const db = await getDbConnection();
-        const all = await db.getAllAsync('SELECT * FROM books;');
+        const all = await db.getAllAsync("SELECT * FROM books WHERE status = 'I''ve Read It All';");
         const withProg = await Promise.all(
           all.map(async b => {
             const latest = await getLatestProgress(b.id);
@@ -80,7 +43,6 @@ const BookListScreen = () => {
         );
         if (!active) return;
         setBooks(withProg);
-        setCount(all.length);
         setLoading(false);
       }
       load();
@@ -88,20 +50,36 @@ const BookListScreen = () => {
     }, [])
   );
 
-  const confirmDelete = async () => {
-    await deleteBook(alert.id);
-    setAlert({ visible:false,id:null });
-    setLoading(true);
-  };
+  const renderStars = (item) => (
+    item.rating > 0 && (
+      <View style={{ flexDirection: 'row', marginTop: 4 }}>
+        {[1,2,3,4,5].map(i => (
+          <Ionicons
+            key={i}
+            name={i <= item.rating ? 'star' : 'star-outline'}
+            size={18}
+            color={'#FFD700'}
+            style={{ marginHorizontal: 1 }}
+          />
+        ))}
+      </View>
+    )
+  );
 
   const handleFavorite = async (id, currentFavorite) => {
     await toggleFavorite(id, currentFavorite);
     navigation.navigate('Main', { screen: 'Favorites' });
   };
 
+  const confirmDelete = async () => {
+    await deleteBook(alert.id);
+    setAlert({ visible:false, id:null });
+    setLoading(true);
+  };
+
   if (loading) {
     return (
-      <View style={[styles.loader,{ backgroundColor: theme.background }]}>
+      <View style={[styles.loader,{ backgroundColor: theme.background }]}> 
         <ActivityIndicator size="large" color={theme.secondary} />
       </View>
     );
@@ -112,11 +90,6 @@ const BookListScreen = () => {
     b.author.toLowerCase().includes(search.toLowerCase()) ||
     b.category.toLowerCase().includes(search.toLowerCase())
   );
-
-  // Split into finished and other books
-  const finishedBooks = filtered.filter(b => b.status === "I've Read It All");
-  const currentlyReadingBooks = filtered.filter(b => b.status === "Reading");
-  const otherBooks = filtered.filter(b => b.status !== "I've Read It All" && b.status !== "Reading");
 
   return (
     <View style={[styles.outer,{ backgroundColor: theme.background }]}>
@@ -135,25 +108,7 @@ const BookListScreen = () => {
           <Text style={[styles.layoutButtonText, { color: layout === 'medium' ? theme.buttonText : theme.text }]}>Medium</Text>
         </TouchableOpacity>
       </View>
-      <TouchableOpacity
-        style={{
-          backgroundColor: theme.secondary,
-          marginHorizontal: 20,
-          marginTop: 10,
-          marginBottom: 10,
-          padding: 12,
-          borderRadius: 8,
-          alignItems: 'center',
-        }}
-        onPress={() => navigation.navigate('FinishedBooks')}
-      >
-        <Text style={{ color: theme.text, fontWeight: 'bold', fontSize: 16 }}>
-          View Finished Books
-        </Text>
-      </TouchableOpacity>
-      <Text style={[styles.header,{ color: theme.text }]}>
-        Books Added: {count}
-      </Text>
+      <Text style={[styles.header,{ color: theme.text }]}>Finished Books</Text>
       <View style={styles.searchRow}>
         <Ionicons name="search" size={22} color={theme.text} />
         <TextInput
@@ -164,65 +119,13 @@ const BookListScreen = () => {
           onChangeText={setSearch}
         />
       </View>
-
-      {/* Currently Reading Section */}
-      {currentlyReadingBooks.length > 0 && (
-        <View style={{ marginBottom: 24 }}>
-          <Text style={{ color: theme.text, fontSize: 18, fontWeight: 'bold', marginLeft: 20, marginBottom: 8 }}>
-            Currently Reading
-          </Text>
-          <FlatList
-            data={currentlyReadingBooks}
-            keyExtractor={i => i.id.toString()}
-            contentContainerStyle={styles.list}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[styles.card, layout === 'medium' && styles.cardMedium, { backgroundColor: theme.cardBackground, flexDirection: layout === 'small' ? 'row' : 'column' }]}
-                onPress={()=>navigation.navigate('BookDetails',{ bookId:item.id })}
-              >
-                {item.coverImage
-                  ? <Image style={[styles.cover, layout === 'medium' && styles.coverMedium]} source={{ uri: item.coverImage }} />
-                  : <Ionicons name="image" size={layout === 'small' ? 80 : 120} color={theme.text} style={layout === 'medium' && styles.coverPlaceholderMedium} />
-                }
-                <View style={[styles.info, layout === 'medium' && styles.infoMedium]}>
-                  <Text style={[styles.title,{ color: theme.text, fontSize: layout === 'small' ? 18 : 22 }]} numberOfLines={1}>
-                    {item.title}
-                  </Text>
-                  <Text style={[styles.author,{ color: theme.text, fontSize: layout === 'small' ? 14 : 16 }]}>
-                    by {item.author}
-                  </Text>
-                  <BookProgressBar pct={item.progressMode === 'percentage' ? Math.round(item.latest?.percentage ?? 0) : Math.round(((item.latest?.endPage ?? 0) / (item.totalPages || 1)) * 100)} theme={theme} />
-                </View>
-                <View style={[styles.actions, layout === 'medium' && styles.actionsMedium]}>
-                  <TouchableOpacity
-                    onPress={()=>handleFavorite(item.id, item.favorite)}
-                  >
-                    <Ionicons
-                      name={item.favorite?'heart':'heart-outline'}
-                      size={layout === 'small' ? 24 : 28}
-                      color={item.favorite? '#FF3B30': theme.text}
-                    />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={()=>setAlert({ visible:true,id:item.id })}
-                    style={{ marginLeft: layout === 'small' ? 12 : 16 }}
-                  >
-                    <Ionicons name="trash" size={layout === 'small' ? 24 : 28} color="#FF6B6B" />
-                  </TouchableOpacity>
-                </View>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
-      )}
-
       {filtered.length === 0 ? (
         <Text style={{ color: theme.text, textAlign: 'center', marginTop: 40, fontSize: 16 }}>
-          No matches found.
+          No finished books found.
         </Text>
       ) : (
         <FlatList
-          data={otherBooks}
+          data={filtered}
           keyExtractor={i => i.id.toString()}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
@@ -241,12 +144,10 @@ const BookListScreen = () => {
                 <Text style={[styles.author,{ color: theme.text, fontSize: layout === 'small' ? 14 : 16 }]}>
                   by {item.author}
                 </Text>
-                <BookProgressBar pct={item.progressMode === 'percentage' ? Math.round(item.latest?.percentage ?? 0) : Math.round(((item.latest?.endPage ?? 0) / (item.totalPages || 1)) * 100)} theme={theme} />
+                {renderStars(item)}
               </View>
               <View style={[styles.actions, layout === 'medium' && styles.actionsMedium]}>
-                <TouchableOpacity
-                  onPress={()=>handleFavorite(item.id, item.favorite)}
-                >
+                <TouchableOpacity onPress={()=>handleFavorite(item.id, item.favorite)}>
                   <Ionicons
                     name={item.favorite?'heart':'heart-outline'}
                     size={layout === 'small' ? 24 : 28}
@@ -254,7 +155,7 @@ const BookListScreen = () => {
                   />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  onPress={()=>setAlert({ visible:true,id:item.id })}
+                  onPress={()=>setAlert({ visible:true, id:item.id })}
                   style={{ marginLeft: layout === 'small' ? 12 : 16 }}
                 >
                   <Ionicons name="trash" size={layout === 'small' ? 24 : 28} color="#FF6B6B" />
@@ -264,13 +165,12 @@ const BookListScreen = () => {
           )}
         />
       )}
-
       <CustomAlert
         visible={alert.visible}
         title="Delete Book"
         message="Are you sure?"
         onConfirm={confirmDelete}
-        onCancel={()=>setAlert({ visible:false,id:null })}
+        onCancel={()=>setAlert({ visible:false, id:null })}
       />
     </View>
   );
@@ -289,9 +189,6 @@ const styles = StyleSheet.create({
   title:{ fontSize:18,fontWeight:'bold' },
   author:{ fontSize:14,marginBottom:6 },
   actions:{ flexDirection:'row',alignItems:'center' },
-  progressRow:{ flexDirection:'row',alignItems:'center',marginTop:6 },
-  barBg:{ flex:1,height:4,backgroundColor:'#eee',borderRadius:2,overflow:'hidden',marginRight:8 },
-  barText:{ fontSize:10 },
   layoutButtons: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -348,4 +245,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default BookListScreen;
+export default FinishedBooksScreen; 

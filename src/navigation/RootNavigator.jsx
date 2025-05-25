@@ -5,6 +5,7 @@ import BookDetailsScreen from '../screens/BookDetailsScreen';
 import EditBookScreen from '../screens/EditBookScreen';
 import AboutUsScreen from '../screens/AboutUsScreen';
 import AddBookScreen from '../screens/AddBookScreen'; // Import your AddBookScreen
+import FinishedBooksScreen from '../screens/FinishedBooksScreen';
 
 const Stack = createStackNavigator();
 
@@ -46,6 +47,15 @@ const RootNavigator = () => {
         component={AboutUsScreen}
         options={{
           headerTitle: 'About Us',
+          headerStyle: { backgroundColor: "#C8B6FF" },
+          cardStyle: { backgroundColor: "#C8B6FF" },
+        }}
+      />
+      <Stack.Screen 
+        name="FinishedBooks" 
+        component={FinishedBooksScreen}
+        options={{
+          headerTitle: 'Finished Books',
           headerStyle: { backgroundColor: "#C8B6FF" },
           cardStyle: { backgroundColor: "#C8B6FF" },
         }}

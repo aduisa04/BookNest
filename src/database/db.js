@@ -17,12 +17,12 @@ export const getDbConnection = async () => {
   }
 };
 
-// Setup Database: Create tables if they don't exist.
+// Setup Database: Create tables if they don't exist and apply migrations
 export const setupDatabase = async () => {
   const db = await getDbConnection();
   if (!db) return;
   try {
-    // Create the books table with the correct schema
+    // Initial books table
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS books (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,14 +37,38 @@ export const setupDatabase = async () => {
         dueDate TEXT
       );
     `);
-    // Create the categories table if it doesn't exist
+    // Categories table
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS categories (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL UNIQUE
       );
     `);
-    console.log('✅ Database setup complete');
+
+    // Migrations: add new columns if missing
+    try { await db.execAsync(`ALTER TABLE books ADD COLUMN description TEXT;`); } catch {};
+    try { await db.execAsync(`ALTER TABLE books ADD COLUMN totalPages INTEGER DEFAULT 0;`); } catch {};
+    try { await db.execAsync(`ALTER TABLE books ADD COLUMN progressMode TEXT DEFAULT 'pages';`); } catch {};
+    try { await db.execAsync(`ALTER TABLE reading_logs ADD COLUMN emoji TEXT;`); } catch {};
+
+    // New reading_logs table
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS reading_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        bookId INTEGER,
+        type TEXT,
+        startPage INTEGER,
+        endPage INTEGER,
+        percentage REAL,
+        description TEXT,
+        sessionDuration INTEGER,
+        status TEXT,
+        timestamp DATETIME DEFAULT (datetime('now','localtime')),
+        FOREIGN KEY(bookId) REFERENCES books(id)
+      );
+    `);
+
+    console.log('✅ Database setup & migrations complete');
   } catch (error) {
     console.error('❌ Error setting up database:', error);
   }
@@ -168,7 +192,6 @@ export const updateBookRating = async (bookId, rating, refreshBooks) => {
 };
 
 // Update Book Deadline: Updates the dueDate (deadline) for a book.
-// This updates both the date and time.
 export const updateBookDeadline = async (bookId, newDeadline) => {
   const db = await getDbConnection();
   if (!db) return;
@@ -178,4 +201,63 @@ export const updateBookDeadline = async (bookId, newDeadline) => {
   } catch (error) {
     console.error('❌ Error updating deadline:', error);
   }
+};
+
+// -----------------------------------------------------------
+// NEW: Reading‑logs & progress helpers
+
+/**
+ * Insert a note or session log for a book.
+ */
+export const addReadingLog = async ({
+  bookId, type,
+  startPage = null, endPage = null,
+  percentage = null, description = null,
+  sessionDuration = null, status,
+  emoji = null
+}) => {
+  const db = await getDbConnection();
+  await db.runAsync(
+    `INSERT INTO reading_logs
+        (bookId,type,startPage,endPage,percentage,description,sessionDuration,status,emoji)
+     VALUES (?,?,?,?,?,?,?,?,?);`,
+    [bookId, type, startPage, endPage, percentage, description, sessionDuration, status, emoji]
+  );
+};
+
+/**
+ * Fetch latest progress entry (note or session) for this book.
+ */
+export const getLatestProgress = async (bookId) => {
+  const db = await getDbConnection();
+  return db.getFirstAsync(
+    `SELECT * FROM reading_logs
+       WHERE bookId = ? AND (endPage IS NOT NULL OR percentage IS NOT NULL)
+       ORDER BY timestamp DESC LIMIT 1;`,
+    [bookId]
+  );
+};
+
+/**
+ * Fetch all logs for a given book, newest first.
+ */
+export const getLogsForBook = async (bookId) => {
+  const db = await getDbConnection();
+  return db.getAllAsync(
+    `SELECT * FROM reading_logs
+       WHERE bookId = ?
+       ORDER BY timestamp DESC;`,
+    [bookId]
+  );
+};
+
+/**
+ * Update just the book's status (e.g. after a session)
+ */
+export const updateBookProgress = async (bookId, newStatus) => {
+  const db = await getDbConnection();
+  await db.runAsync(
+    `UPDATE books SET status = ? WHERE id = ?;`,
+    [newStatus, bookId]
+  );
 };

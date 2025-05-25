@@ -1,3 +1,4 @@
+// ./screens/FavoritesScreen.js
 import React, { useState, useCallback, useRef } from 'react';
 import { 
   View, 
@@ -11,8 +12,9 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { getDbConnection, updateBookRating } from '../database/db';
+import { getDbConnection, deleteBook } from '../database/db';
 import { useTheme } from '../context/ThemeContext';
+import CustomAlert from '../context/CustomAlert';
 
 const newColors = {
   primary: "#C8B6FF", // Periwinkle
@@ -92,6 +94,8 @@ const FavoritesScreen = () => {
 
   const [favoriteBooks, setFavoriteBooks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [alert, setAlert] = useState({ visible:false, id:null });
+  const [layout, setLayout] = useState('small');
 
   const refreshFavorites = async () => {
     try {
@@ -111,60 +115,38 @@ const FavoritesScreen = () => {
     }, [])
   );
 
-  const handleRating = async (bookId, rating) => {
-    await updateBookRating(bookId, rating, refreshFavorites);
+  const confirmDelete = async () => {
+    await deleteBook(alert.id, refreshFavorites);
+    setAlert({ visible:false, id:null });
   };
-
-  // Fun rating feedback based on current rating.
-  const getRatingFeedback = (rating) => {
-    if (rating === 0) return "Tap a star to rate!";
-    if (rating === 1) return "Ouch, that's low!";
-    if (rating === 2) return "Could be better!";
-    if (rating === 3) return "Average rating!";
-    if (rating === 4) return "Great!";
-    if (rating === 5) return "Excellent!";
-    return "";
-  };
-
-  // Updated renderStars: stars are grouped in a new 'starsRow' view
-  const renderStars = (book) => (
-    <View style={[styles.starContainer, { backgroundColor: currentTheme.cardBackground, borderColor: currentTheme.secondary }]}>
-      <View style={styles.starsRow}>
-        {[1, 2, 3, 4, 5].map((star) => (
-          <AnimatedStar
-            key={star}
-            filled={star <= book.rating}
-            onPress={() => handleRating(book.id, book.rating === star ? 0 : star)}
-          />
-        ))}
-      </View>
-      <Animated.Text animation="bounceIn" style={[styles.ratingFeedback, { color: currentTheme.text }]}>
-        {getRatingFeedback(book.rating)}
-      </Animated.Text>
-    </View>
-  );
 
   const renderItem = ({ item }) => (
-    <View style={[styles.bookCard, { backgroundColor: currentTheme.cardBackground }]}>
+    <View style={[styles.bookCard, layout === 'medium' && styles.cardMedium, { backgroundColor: currentTheme.cardBackground, flexDirection: layout === 'small' ? 'row' : 'column' }]}>
       {item.coverImage ? (
-        <Image source={{ uri: item.coverImage }} style={styles.coverImage} resizeMode="cover" />
+        <Image style={[styles.coverImage, layout === 'medium' && styles.coverMedium, layout === 'small' && styles.coverSmall]} source={{ uri: item.coverImage }} resizeMode="cover" />
       ) : (
-        <View style={[styles.coverPlaceholder, { backgroundColor: currentTheme.background }]}>
-          <Ionicons name="image" size={40} color={currentTheme.text} />
+        <View style={[styles.coverPlaceholder, layout === 'medium' && styles.coverPlaceholderMedium, layout === 'small' && styles.coverPlaceholderSmall, { backgroundColor: currentTheme.background }]}>
+          <Ionicons name="image" size={layout === 'small' ? 60 : 80} color={currentTheme.text} />
         </View>
       )}
-      <View style={styles.detailsContainer}>
-        <Text style={[styles.bookTitle, { color: currentTheme.text }]} numberOfLines={1}>
+      <View style={[styles.detailsContainer, layout === 'medium' && styles.detailsContainerMedium, layout === 'small' && styles.detailsContainerSmall]}>
+        <Text style={[styles.bookTitle, { color: currentTheme.text, fontSize: layout === 'small' ? 18 : 24 }]} numberOfLines={1}>
           {item.title}
         </Text>
-        <Text style={[styles.bookAuthor, { color: currentTheme.text }]} numberOfLines={1}>
+        <Text style={[styles.bookAuthor, { color: currentTheme.text, fontSize: layout === 'small' ? 14 : 18 }]} numberOfLines={1}>
           by {item.author}
         </Text>
-        <Text style={[styles.bookRating, { color: currentTheme.text }]}>
-          Rating: {item.rating} star{item.rating === 1 ? '' : 's'}
-        </Text>
       </View>
-      {renderStars(item)}
+      <View style={[styles.buttonRowCentered, layout === 'medium' && styles.buttonRowMedium]}>
+        <TouchableOpacity
+          onPress={()=>setAlert({ visible:true, id:item.id })}
+          style={[styles.deleteIconButton, layout === 'medium' && styles.deleteIconButtonMedium]}
+          activeOpacity={0.7}
+          onLongPress={() => alert('Delete this book from favorites')}
+        >
+          <Ionicons name="trash" size={layout === 'small' ? 24 : 28} color="#fff" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -186,11 +168,34 @@ const FavoritesScreen = () => {
 
   return (
     <View style={[styles.outerContainer, { backgroundColor: currentTheme.background }]}>
+      <View style={styles.layoutButtons}>
+        <Text style={[styles.layoutLabel, { color: currentTheme.text }]}>Layout:</Text>
+        <TouchableOpacity
+          style={[styles.layoutButton, layout === 'small' && styles.layoutButtonActive, { borderColor: currentTheme.secondary, backgroundColor: layout === 'small' ? currentTheme.secondary : 'transparent' }]} 
+          onPress={() => setLayout('small')}
+        >
+          <Text style={[styles.layoutButtonText, { color: layout === 'small' ? currentTheme.buttonText : currentTheme.text }]}>Small</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.layoutButton, layout === 'medium' && styles.layoutButtonActive, { borderColor: currentTheme.secondary, marginLeft: 10, backgroundColor: layout === 'medium' ? currentTheme.secondary : 'transparent' }]} 
+          onPress={() => setLayout('medium')}
+        >
+          <Text style={[styles.layoutButtonText, { color: layout === 'medium' ? currentTheme.buttonText : currentTheme.text }]}>Medium</Text>
+        </TouchableOpacity>
+      </View>
       <FlatList
         data={favoriteBooks}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
         contentContainerStyle={styles.listContainer}
+        showsVerticalScrollIndicator={true}
+      />
+      <CustomAlert
+        visible={alert.visible}
+        title="Delete Book"
+        message="Are you sure?"
+        onConfirm={confirmDelete}
+        onCancel={()=>setAlert({ visible:false, id:null })}
       />
     </View>
   );
@@ -219,18 +224,22 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   bookCard: {
-    borderRadius: 12,
-    marginBottom: 15,
+    borderRadius: 18,
+    marginBottom: 22,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 5,
-    elevation: 4,
+    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 12,
+    elevation: 6,
+    backgroundColor: '#fff',
+    marginHorizontal: 8,
   },
   coverImage: {
     width: '100%',
-    height: 180,
+    height: 170,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
   },
   coverPlaceholder: {
     width: '100%',
@@ -239,62 +248,121 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   detailsContainer: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#DDD',
+    padding: 16,
+    borderBottomWidth: 0,
   },
   bookTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
+    marginBottom: 2,
   },
   bookAuthor: {
     fontSize: 16,
-    marginTop: 4,
+    color: '#888',
+    marginBottom: 6,
   },
-  bookRating: {
-    fontSize: 14,
-    marginTop: 5,
-  },
-  starContainer: {
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
-  },
-  starsRow: {
+  buttonRowCentered: {
     flexDirection: 'row',
     justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
   },
-  ratingFeedback: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginTop: 5,
+  deleteIconButton: {
+    backgroundColor: '#FF3B30',
+    borderRadius: 30,
+    padding: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#FF3B30',
+    shadowOpacity: 0.18,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+    elevation: 3,
   },
-  buttonRow: {
+  layoutButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 5,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginTop: 10,
+    marginBottom: 10,
   },
-  deleteButton: {
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-  },
-  deleteButtonText: {
-    color: '#fff',
-    fontSize: 12,
+  layoutLabel: {
+    fontSize: 16,
+    marginRight: 10,
     fontWeight: 'bold',
   },
-  finishedButton: {
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 5,
+  layoutButton: {
+    borderWidth: 1,
+    borderRadius: 18,
+    paddingVertical: 6,
+    paddingHorizontal: 15,
   },
-  finishedButtonText: {
-    color: '#fff',
-    fontSize: 12,
+  layoutButtonActive: {
+    // Styles for active button (handled inline for dynamic color)
+  },
+  layoutButtonText: {
+    fontSize: 14,
     fontWeight: 'bold',
+  },
+  cardMedium: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+    padding: 15,
+    marginHorizontal: 0,
+  },
+  coverMedium: {
+    width: '100%',
+    height: 250,
+    marginBottom: 10,
+    borderRadius: 12,
+  },
+  coverPlaceholderMedium: {
+    width: '100%',
+    height: 250,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+    borderRadius: 12,
+  },
+  detailsContainerMedium: {
+    padding: 0,
+    marginBottom: 10,
+  },
+  bookTitleMedium: {
+    fontSize: 24,
+  },
+  bookAuthorMedium: {
+    fontSize: 18,
+  },
+  buttonRowMedium: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 0,
+  },
+  deleteIconButtonMedium: {
+    padding: 16,
+    borderRadius: 32,
+  },
+  coverSmall: {
+    width: 60,
+    height: 90,
+    marginRight: 10,
+    borderRadius: 4,
+  },
+  coverPlaceholderSmall: {
+    width: 60,
+    height: 90,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+    borderRadius: 4,
+  },
+  detailsContainerSmall: {
+    flex: 1,
+    padding: 0,
+    justifyContent: 'center',
   },
 });
 
