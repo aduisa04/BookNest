@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Switch, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, Switch, StyleSheet, ScrollView, TouchableOpacity, Platform, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
+import AppHeader from '../components/AppHeader';
 
 // Set Notification Handler
 Notifications.setNotificationHandler({
@@ -78,54 +79,39 @@ const SettingsScreen = () => {
     console.log("Notification scheduled with default sound.");
   };
 
+  const openUrl = (url) => {
+    Linking.openURL(url);
+  };
+
   return (
-    <ScrollView style={[styles.outerContainer, { backgroundColor: theme.background }]}>
-      <View style={[styles.container, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
-        <Text style={[styles.header, { color: theme.text }]}>Settings</Text>
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
+      <AppHeader title="Settings" navigation={navigation} />
 
-        {/* Dark Mode Toggle */}
-        <View style={[styles.row, { borderColor: theme.border }]}>
-          <Ionicons name="moon-outline" size={24} color={theme.text} />
-          <Text style={[styles.rowText, { color: theme.text }]}>Dark Mode</Text>
-          <Switch value={isDark} onValueChange={toggleTheme} />
-        </View>
-
-        {/* Notifications Toggle */}
-        <View style={[styles.row, { borderColor: theme.border }]}>
-          <Ionicons name="notifications-outline" size={24} color={theme.text} />
-          <Text style={[styles.rowText, { color: theme.text }]}>Notifications</Text>
-          <Switch value={notificationsEnabled} onValueChange={handleToggleNotifications} />
-        </View>
-
-        {/* About Us Row */}
-        <TouchableOpacity onPress={() => navigation.navigate('AboutUs')} style={[styles.row, { borderColor: theme.border }]}>
-          <Ionicons name="information-circle-outline" size={24} color={theme.text} />
-          <Text style={[styles.rowText, { color: theme.text }]}>About Us</Text>
-        </TouchableOpacity>
+      {/* Dark Mode Toggle */}
+      <View style={[styles.row, { borderColor: theme.border }]}>
+        <Ionicons name="moon-outline" size={24} color={theme.text} />
+        <Text style={[styles.rowText, { color: theme.text }]}>Dark Mode</Text>
+        <Switch value={isDark} onValueChange={toggleTheme} />
       </View>
+
+      {/* Notifications Toggle */}
+      <View style={[styles.row, { borderColor: theme.border }]}>
+        <Ionicons name="notifications-outline" size={24} color={theme.text} />
+        <Text style={[styles.rowText, { color: theme.text }]}>Notifications</Text>
+        <Switch value={notificationsEnabled} onValueChange={handleToggleNotifications} />
+      </View>
+
+      {/* About Us Row */}
+      <TouchableOpacity onPress={() => navigation.navigate('AboutUs')} style={[styles.row, { borderColor: theme.border }]}>
+        <Ionicons name="information-circle-outline" size={24} color={theme.text} />
+        <Text style={[styles.rowText, { color: theme.text }]}>About Us</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  outerContainer: { flex: 1 },
-  container: {
-    margin: 20,
-    padding: 20,
-    borderRadius: 16,
-    borderWidth: 1,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 4,
-  },
-  header: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
+  container: { flex: 1 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

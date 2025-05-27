@@ -15,6 +15,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { getDbConnection } from '../database/db';
 import { Ionicons } from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable';
+import AppHeader from '../components/AppHeader';
 
 // Import banner images – adjust paths as needed
 import banner1 from '../../assets/b1.png';
@@ -96,22 +97,7 @@ const HomeScreen = () => {
         stickyHeaderIndices={[0]}
       >
         {/* Updated Header with Mauve Background and Curved Bottom */}
-        <Animatable.View 
-          animation="slideInDown" 
-          duration={800} 
-          style={[styles.headerContainer, { backgroundColor: theme.primary || "#C8B6FF" }]}
-        >
-          <View style={styles.headerContent}>
-            <Image 
-              source={require('../../assets/booknest.png')} 
-              style={styles.logo} 
-              resizeMode="cover" 
-            />
-            <Text style={[styles.headerLabelText, { color: theme.text }]}>
-              BOOKNEST
-            </Text>
-          </View>
-        </Animatable.View>
+        <AppHeader title="BOOKNEST" />
   
         {/* Added extra space before the banners */}
         <View style={styles.bannerSpacer} />
@@ -191,35 +177,6 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingBottom: 70,
-  },
-  /* Updated Header Styles */
-  headerContainer: {
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
-    elevation: 5,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    overflow: 'hidden',
-    zIndex: 1,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  logo: {
-    width: 80,
-    height: 50,
-    borderRadius: 25,
-    marginRight: -20,
-  },
-  headerLabelText: {
-    fontSize: 26,
-    fontWeight: 'bold',
   },
   bannerSpacer: {
     height: 20,  // Extra space below header and above banners

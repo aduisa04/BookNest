@@ -12,51 +12,48 @@ const Stack = createStackNavigator();
 const RootNavigator = () => {
   return (
     <Stack.Navigator>
-      <Stack.Screen 
-        name="Main" 
-        component={MainNavigator} 
-        options={{ headerShown: false }} 
+      <Stack.Screen
+        name="Main"
+        component={MainNavigator}
+        options={{ headerShown: false }}
       />
-      <Stack.Screen 
-        name="BookDetails" 
+      <Stack.Screen
+        name="BookDetails"
         component={BookDetailsScreen}
         options={{
-          headerStyle: { backgroundColor: "#C8B6FF" },
+          headerShown: false,
           cardStyle: { backgroundColor: "#C8B6FF" },
         }}
       />
-      <Stack.Screen 
-        name="EditBook" 
+      <Stack.Screen
+        name="EditBook"
         component={EditBookScreen}
         options={{
-          headerStyle: { backgroundColor: "#C8B6FF" },
+          headerShown: false,
           cardStyle: { backgroundColor: "#C8B6FF" },
         }}
       />
-      <Stack.Screen 
-        name="AddBookScreen" 
+      <Stack.Screen
+        name="AddBookScreen"
         component={AddBookScreen}
         options={{
-          headerTitle: 'Add Book',
-          headerStyle: { backgroundColor: "#C8B6FF" },
+          headerShown: false,
           cardStyle: { backgroundColor: "#C8B6FF" },
         }}
       />
-      <Stack.Screen 
-        name="AboutUs" 
+      <Stack.Screen
+        name="AboutUs"
         component={AboutUsScreen}
         options={{
-          headerTitle: 'About Us',
-          headerStyle: { backgroundColor: "#C8B6FF" },
+          headerShown: false,
           cardStyle: { backgroundColor: "#C8B6FF" },
         }}
       />
-      <Stack.Screen 
-        name="FinishedBooks" 
+      <Stack.Screen
+        name="FinishedBooks"
         component={FinishedBooksScreen}
         options={{
-          headerTitle: 'Finished Books',
-          headerStyle: { backgroundColor: "#C8B6FF" },
+          headerShown: false,
           cardStyle: { backgroundColor: "#C8B6FF" },
         }}
       />

@@ -18,6 +18,7 @@ import { MediaTypeOptions, PermissionStatus } from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { getDbConnection, getCategories } from '../database/db';
 import { useTheme } from '../context/ThemeContext';
+import AppHeader from '../components/AppHeader';
 
 const newColors = {
   primary: "#C8B6FF",
@@ -108,118 +109,132 @@ const EditBookScreen = () => {
   };
 
   return (
-    <ScrollView
-      style={[styles.outer,{backgroundColor:currentTheme.background}]}
-      contentContainerStyle={styles.inner}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Text style={[styles.header,{color:currentTheme.text}]}>Edit Book</Text>
-
-      <TextInput
-        placeholder="Title"
-        value={title}
-        onChangeText={setTitle}
-        style={[styles.input,{
-          backgroundColor:currentTheme.inputBackground,
-          color:currentTheme.text,
-          borderColor:currentTheme.primary
-        }]}
-        placeholderTextColor={currentTheme.text}
-      />
-
-      <TextInput
-        placeholder="Author"
-        value={author}
-        onChangeText={setAuthor}
-        style={[styles.input,{
-          backgroundColor:currentTheme.inputBackground,
-          color:currentTheme.text,
-          borderColor:currentTheme.primary
-        }]}
-        placeholderTextColor={currentTheme.text}
-      />
-
-      <Text style={[styles.label,{color:currentTheme.text}]}>Total Pages</Text>
-      <TextInput
-        placeholder="e.g. 320"
-        value={totalPages}
-        onChangeText={setTotalPages}
-        keyboardType="numeric"
-        style={[styles.input,{
-          backgroundColor:currentTheme.inputBackground,
-          color:currentTheme.text,
-          borderColor:currentTheme.primary
-        }]}
-        placeholderTextColor={currentTheme.text}
-      />
-
-      <Text style={[styles.label,{color:currentTheme.text}]}>Record Progress By</Text>
-      <View style={[styles.pickerWrap,{borderColor:currentTheme.primary}]}>
-        <Picker
-          selectedValue={progressMode}
-          onValueChange={setProgressMode}
-          style={{color:currentTheme.text}}
-        >
-          <Picker.Item label="By Pages" value="pages" />
-          <Picker.Item label="By Percentage" value="percentage" />
-        </Picker>
-      </View>
-
-      <Text style={[styles.label,{color:currentTheme.text}]}>Status</Text>
-      <View style={[styles.pickerWrap,{borderColor:currentTheme.primary}]}>
-        <Picker
-          selectedValue={status}
-          onValueChange={setStatus}
-          style={{color:currentTheme.text}}
-        >
-          <Picker.Item label="To Read" value="To Read" />
-          <Picker.Item label="Reading" value="Reading" />
-          <Picker.Item label="I’ve Read It All" value="I’ve Read It All" />
-          <Picker.Item label="Gave Up" value="Gave Up" />
-        </Picker>
-      </View>
-
-      <Text style={[styles.label,{color:currentTheme.text}]}>Description</Text>
-      <TextInput
-        placeholder="Short description…"
-        value={description}
-        onChangeText={setDescription}
-        multiline
-        style={[styles.input,styles.textArea,{
-          backgroundColor:currentTheme.inputBackground,
-          color:currentTheme.text,
-          borderColor:currentTheme.primary
-        }]}
-        placeholderTextColor={currentTheme.text}
-      />
-
-      <TouchableOpacity
-        style={[styles.imgBtn,{backgroundColor:currentTheme.secondary}]}
-        onPress={pickImage}
+    <View style={{ flex: 1, backgroundColor: currentTheme.background }}>
+      <AppHeader title="Edit Book" navigation={navigation} />
+      <ScrollView
+        style={[styles.outer]}
+        contentContainerStyle={[styles.inner, { marginTop: 0, padding: 20 }]}
+        keyboardShouldPersistTaps="handled"
       >
-        <Text style={{color:currentTheme.text}}>
-          {coverImage ? 'Change Cover Image' : 'Select Cover Image'}
-        </Text>
-      </TouchableOpacity>
-      {coverImage && (
-        <Image source={{uri:coverImage}} style={styles.cover} />
-      )}
+        <TextInput
+          placeholder="Title"
+          value={title}
+          onChangeText={setTitle}
+          style={[styles.input,{
+            backgroundColor:currentTheme.inputBackground,
+            color:currentTheme.text,
+            borderColor:currentTheme.primary
+          }]}
+          placeholderTextColor={currentTheme.text}
+        />
 
-      <TouchableOpacity
-        style={[styles.saveBtn,{backgroundColor:currentTheme.secondary}]}
-        onPress={handleUpdate}
-      >
-        <Ionicons name="save-outline" size={20} color={currentTheme.text} />
-        <Text style={[styles.saveText,{color:currentTheme.text}]}> Save Changes</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <TextInput
+          placeholder="Author"
+          value={author}
+          onChangeText={setAuthor}
+          style={[styles.input,{
+            backgroundColor:currentTheme.inputBackground,
+            color:currentTheme.text,
+            borderColor:currentTheme.primary
+          }]}
+          placeholderTextColor={currentTheme.text}
+        />
+
+        {/* Category Picker */}
+        <Text style={[styles.label,{color:currentTheme.text}]}>Category</Text>
+        <View style={[styles.pickerWrap,{borderColor:currentTheme.primary}]}>
+          <Picker
+            selectedValue={selectedCategory}
+            onValueChange={(itemValue) => setSelectedCategory(itemValue)}
+            style={{color:currentTheme.text}}
+          >
+            {categories.map(cat => (
+              <Picker.Item key={cat.id} label={cat.name} value={cat.name} />
+            ))}
+          </Picker>
+        </View>
+
+        <Text style={[styles.label,{color:currentTheme.text}]}>Total Pages</Text>
+        <TextInput
+          placeholder="e.g. 320"
+          value={totalPages}
+          onChangeText={setTotalPages}
+          keyboardType="numeric"
+          style={[styles.input,{
+            backgroundColor:currentTheme.inputBackground,
+            color:currentTheme.text,
+            borderColor:currentTheme.primary
+          }]}
+          placeholderTextColor={currentTheme.text}
+        />
+
+        <Text style={[styles.label,{color:currentTheme.text}]}>Record Progress By</Text>
+        <View style={[styles.pickerWrap,{borderColor:currentTheme.primary}]}>
+          <Picker
+            selectedValue={progressMode}
+            onValueChange={setProgressMode}
+            style={{color:currentTheme.text}}
+          >
+            <Picker.Item label="By Pages" value="pages" />
+            <Picker.Item label="By Percentage" value="percentage" />
+          </Picker>
+        </View>
+
+        <Text style={[styles.label,{color:currentTheme.text}]}>Status</Text>
+        <View style={[styles.pickerWrap,{borderColor:currentTheme.primary}]}>
+          <Picker
+            selectedValue={status}
+            onValueChange={setStatus}
+            style={{color:currentTheme.text}}
+          >
+            <Picker.Item label="To Read" value="To Read" />
+            <Picker.Item label="Reading" value="Reading" />
+            <Picker.Item label="I've Read It All" value="I've Read It All" />
+            <Picker.Item label="Gave Up" value="Gave Up" />
+          </Picker>
+        </View>
+
+        <Text style={[styles.label,{color:currentTheme.text}]}>Description</Text>
+        <TextInput
+          placeholder="Short description…"
+          value={description}
+          onChangeText={setDescription}
+          multiline
+          style={[styles.input,styles.textArea,{
+            backgroundColor:currentTheme.inputBackground,
+            color:currentTheme.text,
+            borderColor:currentTheme.primary
+          }]}
+          placeholderTextColor={currentTheme.text}
+        />
+
+        <TouchableOpacity
+          style={[styles.imgBtn,{backgroundColor:currentTheme.secondary}]}
+          onPress={pickImage}
+        >
+          <Text style={{color:currentTheme.text}}>
+            {coverImage ? 'Change Cover Image' : 'Select Cover Image'}
+          </Text>
+        </TouchableOpacity>
+        {coverImage && (
+          <Image source={{uri:coverImage}} style={styles.cover} />
+        )}
+
+        <TouchableOpacity
+          style={[styles.saveBtn,{backgroundColor:currentTheme.secondary}]}
+          onPress={handleUpdate}
+        >
+          <Ionicons name="save-outline" size={20} color={currentTheme.text} />
+          <Text style={[styles.saveText,{color:currentTheme.text}]}> Save Changes</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   outer:{flex:1},
   inner:{padding:20},
-  header:{fontSize:24,fontWeight:'bold',marginBottom:20},
   input:{borderWidth:1,padding:12,marginBottom:15,borderRadius:8,fontSize:16},
   textArea:{height:100,textAlignVertical:'top'},
   label:{fontSize:16,fontWeight:'600',marginBottom:5},

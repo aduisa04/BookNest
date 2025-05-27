@@ -17,6 +17,7 @@ import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import { MediaTypeOptions, PermissionStatus } from 'expo-image-picker';
 import { useTheme } from '../context/ThemeContext';
+import AppHeader from '../components/AppHeader';
 
 // Define the default color scheme (fallback for light mode)
 const newColors = {
@@ -204,9 +205,8 @@ const AddBookScreen = () => {
       contentContainerStyle={styles.contentContainer}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={[styles.card, { backgroundColor: currentTheme.background }]}>
-        <Text style={[styles.header, { color: currentTheme.text }]}>Add New Book</Text>
-
+      <AppHeader title="Add New Book" navigation={navigation} />
+      <View style={[styles.card, { backgroundColor: currentTheme.background, marginTop: 30 }]}>
         <TextInput 
           placeholder="Title"
           value={title}
@@ -230,6 +230,23 @@ const AddBookScreen = () => {
           }]}
           placeholderTextColor={currentTheme.text}
         />
+
+        {/* Category Picker */}
+        <Text style={[styles.label, { color: currentTheme.text }]}>Category</Text>
+        <View style={[styles.pickerContainer, {
+          backgroundColor: currentTheme.inputBackground,
+          borderColor: currentTheme.primary
+        }]}>
+          <Picker
+            selectedValue={selectedCategory}
+            onValueChange={(itemValue) => setSelectedCategory(itemValue)}
+            style={[styles.picker, { color: currentTheme.text }]}
+          >
+            {categories.map(cat => (
+              <Picker.Item key={cat.id} label={cat.name} value={cat.name} />
+            ))}
+          </Picker>
+        </View>
 
         <Text style={[styles.label, { color: currentTheme.text }]}>Total Pages</Text>
         <TextInput
@@ -272,7 +289,7 @@ const AddBookScreen = () => {
           >
             <Picker.Item label="To Read" value="To Read" />
             <Picker.Item label="Reading" value="Reading" />
-            <Picker.Item label="I’ve Read It All" value="I’ve Read It All" />
+            <Picker.Item label="I've Read It All" value="I've Read It All" />
             <Picker.Item label="Gave Up" value="Gave Up" />
           </Picker>
         </View>
@@ -323,7 +340,7 @@ const AddBookScreen = () => {
 
 const styles = StyleSheet.create({
   outerContainer: { flex: 1 },
-  contentContainer: { padding: 20 },
+  contentContainer: { paddingBottom: 20 },
   card: {
     borderRadius: 16,
     padding: 20,
@@ -331,8 +348,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowOffset: { width: 0, height: 3 },
     elevation: 4,
+    marginTop: 30,
   },
-  header: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
   input: {
     borderWidth: 1,
     padding: 12,

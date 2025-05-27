@@ -10,11 +10,12 @@ import {
   Image,
   Animated
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getDbConnection, deleteBook } from '../database/db';
 import { useTheme } from '../context/ThemeContext';
 import CustomAlert from '../context/CustomAlert';
+import AppHeader from '../components/AppHeader';
 
 const newColors = {
   primary: "#C8B6FF", // Periwinkle
@@ -96,6 +97,7 @@ const FavoritesScreen = () => {
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState({ visible:false, id:null });
   const [layout, setLayout] = useState('small');
+  const navigation = useNavigation();
 
   const refreshFavorites = async () => {
     try {
@@ -150,46 +152,44 @@ const FavoritesScreen = () => {
     </View>
   );
 
-  if (loading) {
-    return (
-      <View style={[styles.loaderContainer, { backgroundColor: currentTheme.background }]}>
-        <ActivityIndicator size="large" color={currentTheme.buttonBackground} />
-      </View>
-    );
-  }
-
-  if (favoriteBooks.length === 0) {
-    return (
-      <View style={[styles.emptyContainer, { backgroundColor: currentTheme.background }]}>
-        <Text style={[styles.emptyText, { color: currentTheme.text }]}>No favorite books found.</Text>
-      </View>
-    );
-  }
-
   return (
     <View style={[styles.outerContainer, { backgroundColor: currentTheme.background }]}>
-      <View style={styles.layoutButtons}>
-        <Text style={[styles.layoutLabel, { color: currentTheme.text }]}>Layout:</Text>
-        <TouchableOpacity
-          style={[styles.layoutButton, layout === 'small' && styles.layoutButtonActive, { borderColor: currentTheme.secondary, backgroundColor: layout === 'small' ? currentTheme.secondary : 'transparent' }]} 
-          onPress={() => setLayout('small')}
-        >
-          <Text style={[styles.layoutButtonText, { color: layout === 'small' ? currentTheme.buttonText : currentTheme.text }]}>Small</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.layoutButton, layout === 'medium' && styles.layoutButtonActive, { borderColor: currentTheme.secondary, marginLeft: 10, backgroundColor: layout === 'medium' ? currentTheme.secondary : 'transparent' }]} 
-          onPress={() => setLayout('medium')}
-        >
-          <Text style={[styles.layoutButtonText, { color: layout === 'medium' ? currentTheme.buttonText : currentTheme.text }]}>Medium</Text>
-        </TouchableOpacity>
-      </View>
-      <FlatList
-        data={favoriteBooks}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={true}
-      />
+      <AppHeader title="Your Favorites" navigation={navigation} />
+      {loading ? (
+        <View style={[styles.loaderContainer, { backgroundColor: currentTheme.background }]}>
+          <ActivityIndicator size="large" color={currentTheme.buttonBackground} />
+        </View>
+      ) : favoriteBooks.length === 0 ? (
+        <View style={[styles.emptyContainer, { backgroundColor: currentTheme.background }]}>
+          <Text style={[styles.emptyText, { color: currentTheme.text }]}>No favorite books found.</Text>
+        </View>
+      ) : (
+        <>
+          <View style={[styles.layoutButtons, { marginTop: 20 }]}>
+            <Text style={[styles.layoutLabel, { color: currentTheme.text }]}>Layout:</Text>
+            <TouchableOpacity
+              style={[styles.layoutButton, layout === 'small' && styles.layoutButtonActive, { borderColor: currentTheme.secondary, backgroundColor: layout === 'small' ? currentTheme.secondary : 'transparent' }]} 
+              onPress={() => setLayout('small')}
+            >
+              <Text style={[styles.layoutButtonText, { color: layout === 'small' ? currentTheme.buttonText : currentTheme.text }]}>Small</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.layoutButton, layout === 'medium' && styles.layoutButtonActive, { borderColor: currentTheme.secondary, marginLeft: 10, backgroundColor: layout === 'medium' ? currentTheme.secondary : 'transparent' }]} 
+              onPress={() => setLayout('medium')}
+            >
+              <Text style={[styles.layoutButtonText, { color: layout === 'medium' ? currentTheme.buttonText : currentTheme.text }]}>Medium</Text>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={favoriteBooks}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderItem}
+            contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={true}
+          />
+        </>
+      )}
+
       <CustomAlert
         visible={alert.visible}
         title="Delete Book"
@@ -204,7 +204,6 @@ const FavoritesScreen = () => {
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
-    paddingHorizontal: 10,
   },
   loaderContainer: {
     flex: 1,
@@ -263,21 +262,24 @@ const styles = StyleSheet.create({
   },
   buttonRowCentered: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     alignItems: 'center',
     marginBottom: 16,
   },
   deleteIconButton: {
     backgroundColor: '#FF3B30',
-    borderRadius: 30,
-    padding: 14,
+    borderRadius: 22,
+    padding: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 30,
     shadowColor: '#FF3B30',
     shadowOpacity: 0.18,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 6,
     elevation: 3,
+    marginBottom: 5,
+    marginTop: 13,
   },
   layoutButtons: {
     flexDirection: 'row',
@@ -337,13 +339,16 @@ const styles = StyleSheet.create({
   },
   buttonRowMedium: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     alignItems: 'center',
     marginBottom: 0,
   },
   deleteIconButtonMedium: {
-    padding: 16,
-    borderRadius: 32,
+    padding: 14,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
   },
   coverSmall: {
     width: 60,

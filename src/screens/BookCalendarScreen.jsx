@@ -16,10 +16,11 @@ import { Calendar } from 'react-native-calendars';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Animatable from 'react-native-animatable';
 import * as Notifications from 'expo-notifications';
-import { getBooksFromDatabase, addBook, deleteBook, updateBookDeadline } from '../database/db';
+import { getBooksFromDatabase, addBook, deleteBook, updateBookDeadline, addReadingLog } from '../database/db';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import AppHeader from '../components/AppHeader';
 
 // Default color scheme (fallback for light mode)
 const newColors = {
@@ -363,9 +364,10 @@ function BookCalendarScreen() {
   }
 
   return (
-    <Animatable.View animation="fadeIn" duration={800} style={[styles.container, { backgroundColor: currentTheme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <AppHeader title="Reading Schedule" navigation={navigation} />
       {/* Calendar Container */}
-      <View style={[styles.calendarContainer, { backgroundColor: isDark ? currentTheme.background : "#F3F0FF" }]}>
+      <View style={[styles.calendarContainer, { backgroundColor: isDark ? currentTheme.background : "#F3F0FF", marginTop: 20 }]}>
         <Calendar
           markedDates={markedDates}
           onDayPress={(day) => {
@@ -424,9 +426,9 @@ function BookCalendarScreen() {
       </View>
 
       {/* Book List */}
-      <Animatable.Text animation="fadeInUp" duration={800} style={[styles.header, { color: currentTheme.text }]}>
+      <Text style={[styles.header, { color: currentTheme.text }]}>
         📚 Your Books
-      </Animatable.Text>
+      </Text>
       {filteredBooks.length === 0 ? (
         <Text style={[styles.noBooks, { color: currentTheme.text }]}>
           {selectedDate ? 'No books for selected date.' : 'No books added yet.'}
@@ -436,7 +438,7 @@ function BookCalendarScreen() {
           data={filteredBooks}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
-            <Animatable.View animation="fadeInUp" duration={600} style={[styles.bookItem, { backgroundColor: currentTheme.background }]}>
+            <View style={[styles.bookItem, { backgroundColor: currentTheme.background }]}>
               <Text style={[styles.title, { color: currentTheme.text }]}>{item.title}</Text>
               <Text style={[styles.dueDate, { color: currentTheme.text }]}>
                 Due: {new Date(item.dueDate).toLocaleString()}
@@ -455,7 +457,7 @@ function BookCalendarScreen() {
                   <Text style={styles.finishedButtonText}>Finished Reading</Text>
                 </TouchableOpacity>
               </View>
-            </Animatable.View>
+            </View>
           )}
           contentContainerStyle={[styles.listContainer, { marginTop: 20, flexGrow: 1, paddingBottom: 120 }]}
         />
@@ -472,7 +474,7 @@ function BookCalendarScreen() {
         }}
       >
         <View style={styles.modalOverlay}>
-          <Animatable.View animation="slideInUp" duration={800} style={[styles.modalContainer, { backgroundColor: currentTheme.background }]}>
+          <View style={styles.modalContainer}>
             <Text style={[styles.modalHeader, { color: currentTheme.text }]}>
               {editingBook ? `Extend Deadline for ${editingBook.title}` : `Add Reminder for ${selectedDate}`}
             </Text>
@@ -570,7 +572,7 @@ function BookCalendarScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
-          </Animatable.View>
+          </View>
         </View>
       </Modal>
 
@@ -635,18 +637,18 @@ function BookCalendarScreen() {
           </View>
         </Modal>
       )}
-    </Animatable.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 0,
   },
   calendarContainer: {
     marginVertical: 10,
-    marginHorizontal: 10,
+    marginHorizontal: 20,
     padding: 10,
     borderRadius: 10,
     shadowColor: '#000',
@@ -759,6 +761,7 @@ const styles = StyleSheet.create({
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginHorizontal: 20,
   },
   customModalButton: {
     paddingVertical: 10,

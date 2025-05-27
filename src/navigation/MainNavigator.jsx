@@ -97,21 +97,17 @@ export default function MainNavigator() {
   return (
     <Tab.Navigator
       screenOptions={{
-        headerStyle: {
-          backgroundColor: '#C8B6FF', // Mauve header background
-        },
-        headerTintColor: '#6A0572', // Darker mauve for header text
-        tabBarShowLabel: false, // Hide labels for a cleaner look
+        headerShown: false, // Hide default header for all tab screens
       }}
       tabBar={(props) => <CustomTabBar {...props} />}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-      <Tab.Screen name="BookCalendar" component={BookCalendarScreen} options={{ headerTitle: 'My Calendar' }} />
-      <Tab.Screen name="Book List" component={BookListScreen} options={{ headerTitle: 'Book List' }} />
-      <Tab.Screen name="Add Book" component={AddBookScreen} options={{ headerTitle: 'Add Book' }} />
-      <Tab.Screen name="Favorites" component={FavoritesScreen} options={{ headerTitle: 'Favorites' }} />
-      <Tab.Screen name="Categories" component={CategoriesScreen} options={{ headerTitle: 'Categories' }} />
-      <Tab.Screen name="Settings" component={SettingsScreen} options={{ headerTitle: '' }} />
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="BookCalendar" component={BookCalendarScreen} />
+      <Tab.Screen name="Book List" component={BookListScreen} />
+      <Tab.Screen name="Add Book" component={AddBookScreen} />
+      <Tab.Screen name="Favorites" component={FavoritesScreen} />
+      <Tab.Screen name="Categories" component={CategoriesScreen} />
+      <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );
 }

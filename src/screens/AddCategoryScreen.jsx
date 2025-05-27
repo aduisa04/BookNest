@@ -11,6 +11,8 @@ import {
 import { addCategory, getCategories, deleteCategory } from '../database/db';
 import { useTheme } from '../context/ThemeContext';
 import * as Animatable from 'react-native-animatable';
+import { useNavigation } from '@react-navigation/native';
+import AppHeader from '../components/AppHeader';
 
 // Default color scheme (fallback)
 const newColors = {
@@ -125,6 +127,8 @@ const AddCategoryScreen = () => {
   const [confirmationMessage, setConfirmationMessage] = useState('');
   const [confirmationCallback, setConfirmationCallback] = useState(null);
 
+  const navigation = useNavigation();
+
   // Helper to show simple alert
   const showAlert = (title, message, callback = null) => {
     setAlertTitle(title);
@@ -210,29 +214,24 @@ const AddCategoryScreen = () => {
   );
 
   return (
-    <Animatable.View animation="fadeIn" duration={800} style={[styles.container, { backgroundColor: currentTheme.background }]}>
-      {/* Animated Header with Mauve Background */}
-      <Animatable.View animation="slideInDown" duration={800} style={[styles.headerContainer, { backgroundColor: newColors.primary }]}>
-        <Animatable.Text animation="pulse" easing="ease-out" iterationCount="infinite" style={[styles.headerText, { color: currentTheme.text }]}>
-          Add Category
-        </Animatable.Text>
-      </Animatable.View>
+    <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
+      <AppHeader title="Add Category" navigation={navigation} />
 
       <TextInput
         placeholder="Enter Category Name"
         value={categoryName}
         onChangeText={setCategoryName}
-        style={[styles.input, { backgroundColor: currentTheme.inputBackground, color: currentTheme.text, borderColor: newColors.primary }]}
+        style={[styles.input, { backgroundColor: currentTheme.inputBackground, color: currentTheme.text, borderColor: newColors.primary, marginHorizontal: 20, marginTop: 20 }]}
         placeholderTextColor={currentTheme.text}
       />
-      <TouchableOpacity style={[styles.button, { backgroundColor: newColors.secondary }]} onPress={handleAddCategory}>
+      <TouchableOpacity style={[styles.button, { backgroundColor: newColors.secondary, marginHorizontal: 20 }]} onPress={handleAddCategory}>
         <Text style={styles.buttonText}>Add Category</Text>
       </TouchableOpacity>
       <FlatList
         data={categories}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={[styles.listContainer, { paddingHorizontal: 20 }]}
       />
       <CustomAlert 
         visible={alertVisible}
@@ -247,29 +246,14 @@ const AddCategoryScreen = () => {
         onConfirm={handleConfirmDeletion}
         onCancel={handleCancelConfirmation}
       />
-    </Animatable.View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    padding: 20,
+  container: {
+    flex: 1,
     backgroundColor: newColors.background,
-  },
-  headerContainer: {
-    paddingVertical: 20,
-    alignItems: 'center',
-    marginBottom: 25,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
-  },
-  headerText: {
-    fontSize: 30,
-    fontWeight: 'bold',
   },
   input: { 
     borderWidth: 1, 

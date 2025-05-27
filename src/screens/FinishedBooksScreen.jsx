@@ -19,6 +19,7 @@ import {
 } from '../database/db';
 import { useTheme } from '../context/ThemeContext';
 import CustomAlert from '../context/CustomAlert';
+import AppHeader from '../components/AppHeader';
 
 const FinishedBooksScreen = () => {
   const navigation = useNavigation();
@@ -28,25 +29,31 @@ const FinishedBooksScreen = () => {
   const [search, setSearch] = useState('');
   const [alert, setAlert] = useState({ visible:false, id:null });
   const [layout, setLayout] = useState('small');
+  const [deletedMessage, setDeletedMessage] = useState('');
+
+  const fetchFinishedBooks = async () => {
+    setLoading(true);
+    try {
+      const db = await getDbConnection();
+      const all = await db.getAllAsync("SELECT * FROM books WHERE status = 'I''ve Read It All';");
+      const withProg = await Promise.all(
+        all.map(async b => {
+          const latest = await getLatestProgress(b.id);
+          return { ...b, latest };
+        })
+      );
+      setBooks(withProg);
+    } catch (error) {
+      console.error('Error fetching finished books:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useFocusEffect(
     React.useCallback(() => {
-      let active = true;
-      async function load() {
-        const db = await getDbConnection();
-        const all = await db.getAllAsync("SELECT * FROM books WHERE status = 'I''ve Read It All';");
-        const withProg = await Promise.all(
-          all.map(async b => {
-            const latest = await getLatestProgress(b.id);
-            return { ...b, latest };
-          })
-        );
-        if (!active) return;
-        setBooks(withProg);
-        setLoading(false);
-      }
-      load();
-      return () => { active = false; };
+      fetchFinishedBooks();
+      return () => { /* cleanup if needed */ };
     }, [])
   );
 
@@ -72,9 +79,10 @@ const FinishedBooksScreen = () => {
   };
 
   const confirmDelete = async () => {
-    await deleteBook(alert.id);
+    await deleteBook(alert.id, fetchFinishedBooks);
     setAlert({ visible:false, id:null });
-    setLoading(true);
+    setDeletedMessage('Book deleted successfully!');
+    setTimeout(() => setDeletedMessage(''), 3000);
   };
 
   if (loading) {
@@ -93,7 +101,13 @@ const FinishedBooksScreen = () => {
 
   return (
     <View style={[styles.outer,{ backgroundColor: theme.background }]}>
-      <View style={styles.layoutButtons}>
+      <AppHeader title="Finished Books" navigation={navigation} />
+      {deletedMessage ? (
+        <Text style={{ color: 'green', textAlign: 'center', marginTop: 10 }}>
+          {deletedMessage}
+        </Text>
+      ) : null}
+      <View style={[styles.layoutButtons, { marginTop: 20 }]}>
         <Text style={[styles.layoutLabel, { color: theme.text }]}>Layout:</Text>
         <TouchableOpacity
           style={[styles.layoutButton, layout === 'small' && styles.layoutButtonActive, { borderColor: theme.secondary, backgroundColor: layout === 'small' ? theme.secondary : 'transparent' }]} 

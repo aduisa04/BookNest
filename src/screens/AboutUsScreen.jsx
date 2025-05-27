@@ -1,9 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, Linking } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { useNavigation } from '@react-navigation/native';
+import AppHeader from '../components/AppHeader';
 
 const AboutUsScreen = () => {
   const { theme, isDark } = useTheme();
+  const navigation = useNavigation();
 
   const currentTheme = {
     text: isDark ? '#F5F5F5' : theme.text || '#333333',
@@ -12,10 +16,15 @@ const AboutUsScreen = () => {
     border: theme.border || '#A39BE0',
   };
 
+  const openUrl = (url) => {
+    Linking.openURL(url);
+  };
+
   return (
-    <ScrollView style={[styles.outerContainer, { backgroundColor: currentTheme.background }]}>
-      <View style={[styles.container, { backgroundColor: currentTheme.cardBackground, borderColor: currentTheme.border }]}>
-        
+    <ScrollView style={[styles.container, { backgroundColor: currentTheme.background }]}>
+      <AppHeader title="About Us" navigation={navigation} />
+      
+      <View style={[styles.card, { backgroundColor: currentTheme.cardBackground, borderColor: currentTheme.border }]}>
         <Image source={require('../../assets/bg.png')} style={styles.logo} />
         
         <Text style={[styles.header, { color: currentTheme.text }]}>Welcome to BookNest! 📚</Text>
@@ -37,10 +46,10 @@ const AboutUsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  outerContainer: {
+  container: {
     flex: 1,
   },
-  container: {
+  card: {
     margin: 20,
     padding: 25,
     borderRadius: 16,
